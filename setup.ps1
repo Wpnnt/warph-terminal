@@ -52,6 +52,7 @@ $repoRoot = if (Test-Path (Join-Path $PSScriptRoot "src\Microsoft.PowerShell_pro
 $profileSrc       = Join-Path $repoRoot "src\Microsoft.PowerShell_profile.ps1"
 $configSrc        = Join-Path $repoRoot "src\config"
 $modulesSrc       = Join-Path $repoRoot "src\modules"
+$assetsSrc        = Join-Path $repoRoot "assets"
 $themeSrc         = Join-Path $repoRoot "themes\cobalt2.omp.json"
 if (-not (Test-Path -LiteralPath $themeSrc)) {
     $themeSrc = Join-Path $repoRoot "cobalt2.omp.json"
@@ -61,6 +62,7 @@ $userHome         = [Environment]::GetFolderPath('UserProfile')
 $installDir       = Join-Path $userHome ".warph-terminal"
 $installedProfile = Join-Path $installDir "Microsoft.PowerShell_profile.ps1"
 $installedTheme   = Join-Path $installDir "cobalt2.omp.json"
+$installedLogo    = Join-Path $installDir "assets\logo.svg"
 $profileDir       = Split-Path $PROFILE
 $themeDest        = Join-Path $profileDir "cobalt2.omp.json"
 
@@ -172,6 +174,14 @@ function Invoke-InstallAction ($selectedMode, $noOptional) {
         Write-Err "Theme source not found at $themeSrc"
     }
 
+    # Copy assets
+    if (Test-Path -LiteralPath $assetsSrc) {
+        $targetAssetDir = Join-Path $installDir "assets"
+        New-Item -ItemType Directory -Force -Path $targetAssetDir | Out-Null
+        Copy-Item -Path (Join-Path $assetsSrc "*") -Destination $targetAssetDir -Force
+        Write-Ok "Assets copied -> $targetAssetDir"
+    }
+
     # Step 3: Profiles Configuration
     Write-Step 3 $TOTAL "Configuring profile targets"
 
@@ -191,10 +201,14 @@ function Invoke-InstallAction ($selectedMode, $noOptional) {
             # Use fully resolved $installedProfile path — pwsh.exe does NOT expand Windows %USERPROFILE% syntax
             $cmdline     = "pwsh.exe -NoExit -ExecutionPolicy Bypass -File `"$installedProfile`""
             $profileGuid = "{$(([System.Guid]::NewGuid()).ToString())}"
+            $iconPath    = if (Test-Path -LiteralPath $installedLogo) { $installedLogo } else { "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png" }
 
             $existing = $json.profiles.list | Where-Object { $_.name -eq $profileName }
             if ($existing) {
                 $existing.commandline = $cmdline
+                if (Test-Path -LiteralPath $installedLogo) {
+                    $existing.icon = $installedLogo
+                }
                 if ($existing.PSObject.Properties['font']) {
                     $existing.PSObject.Properties.Remove('font')
                 }
@@ -205,7 +219,7 @@ function Invoke-InstallAction ($selectedMode, $noOptional) {
                     name             = $profileName
                     guid             = $profileGuid
                     commandline      = $cmdline
-                    icon             = "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png"
+                    icon             = $iconPath
                     startingDirectory= "%USERPROFILE%"
                     hidden           = $false
                 }
@@ -399,6 +413,13 @@ function Invoke-RepairAction {
         Write-Ok "Theme updated in $installDir and `$PROFILE dir"
         $repaired = $true
     }
+    if (Test-Path -LiteralPath $assetsSrc) {
+        $targetAssetDir = Join-Path $installDir "assets"
+        New-Item -ItemType Directory -Force -Path $targetAssetDir | Out-Null
+        Copy-Item -Path (Join-Path $assetsSrc "*") -Destination $targetAssetDir -Force
+        Write-Ok "Assets refreshed in $targetAssetDir"
+        $repaired = $true
+    }
 
     # 2. Repair Windows Terminal settings
     $wtSettings = Get-WTSettingsPath
@@ -416,6 +437,12 @@ function Invoke-RepairAction {
                 Write-Host "    New: ${grn}$expectedCmd${rst}"
                 $wtProfile.commandline = $expectedCmd
                 $needsSave = $true
+            }
+            if (Test-Path -LiteralPath $installedLogo) {
+                if ($wtProfile.icon -ne $installedLogo) {
+                    $wtProfile.icon = $installedLogo
+                    $needsSave = $true
+                }
             }
             if ($wtProfile.PSObject.Properties['font']) {
                 $wtProfile.PSObject.Properties.Remove('font')

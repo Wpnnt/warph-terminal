@@ -61,6 +61,11 @@ if (-not $t7) { $allPass = $false }
 $t8 = Assert-Condition "scripts/uninstall.ps1 exists" { Test-Path (Join-Path $repoRoot "scripts\uninstall.ps1") }
 if (-not $t8) { $allPass = $false }
 
+# Test 9: Visual assets exist
+$logoFile = Join-Path $repoRoot "assets\logo.svg"
+$t9 = Assert-Condition "assets/logo.svg exists" { Test-Path $logoFile }
+if (-not $t9) { $allPass = $false }
+
 if (-not $allPass) {
     exit 1
 } else {

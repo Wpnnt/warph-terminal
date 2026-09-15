@@ -1,10 +1,17 @@
+<div align="center">
+
+<img src="assets/logo.svg" alt="Warph Terminal Logo" width="180" />
+
 # Warph Terminal
 
-A modular, high-performance PowerShell 7 environment for Windows with automated module discovery, modern CLI tool integrations, media utilities, and an Oh My Posh prompt.
+**A modular, high-performance PowerShell 7 environment for Windows**  
+Automated module discovery • Modern Rust CLI tools • Media utilities • Oh My Posh prompt
 
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.4%2B-blue.svg)](https://github.com/PowerShell/PowerShell)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6.svg)](https://microsoft.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+</div>
 
 ---
 
@@ -254,6 +261,8 @@ Convert media files directly in your terminal:
 
 ```
 warph-terminal/
+├── assets/
+│   └── logo.svg                      # Official Warph Terminal vector logo
 ├── .github/
 │   └── workflows/
 │       └── audit.yml                 # CI workflow: syntax, functional tests, and 3-way sync
