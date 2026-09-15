@@ -87,32 +87,29 @@ ${dim}----------------------------------------------------${reset}
   ${command}togif <f> [fps] [w]${reset} ${accent}->${reset} ${desc}Convert to GIF (default 15fps, 480px)${reset}
   ${command}towebm <file>${reset}      ${accent}->${reset} ${desc}Convert to WebM (VP9 + Opus)${reset}
 
-${section}Rust Tools${reset}
+${section}Modern CLI Tools${reset}
 ${dim}----------------------------------------------------${reset}
   ${command}la${reset}                 ${accent}->${reset} ${desc}eza: list files with icons (includes hidden)${reset}
   ${command}ll${reset}                 ${accent}->${reset} ${desc}eza: detailed listing with git status${reset}
-  ${command}ff <name>${reset}          ${accent}->${reset} ${desc}fd: fast file search${reset}
-  ${command}grep <pattern>${reset}     ${accent}->${reset} ${desc}rg: regex text search (ripgrep)${reset}
-  ${command}head <file> [n]${reset}    ${accent}->${reset} ${desc}bat: show first N lines (default 10)${reset}
-  ${command}cat <file>${reset}         ${accent}->${reset} ${desc}bat: view file with syntax highlighting${reset}
-  ${command}du [path]${reset}          ${accent}->${reset} ${desc}dust: visual disk usage${reset}
-  ${command}top${reset}                ${accent}->${reset} ${desc}bottom: CPU/memory/process monitor${reset}
-  ${command}ps2${reset}                ${accent}->${reset} ${desc}procs: modern process listing${reset}
-  ${command}loc [path]${reset}         ${accent}->${reset} ${desc}tokei: count lines of code by language${reset}
-  ${command}bench <cmd>${reset}        ${accent}->${reset} ${desc}hyperfine: benchmark command speed${reset}
-  ${command}http <met> <url>${reset}   ${accent}->${reset} ${desc}xh: HTTP client (HTTPie-style)${reset}
-  ${command}gui${reset}                ${accent}->${reset} ${desc}gitui: interactive TUI for git${reset}
-  ${command}fm${reset}                 ${accent}->${reset} ${desc}yazi: terminal file manager${reset}
-  ${command}tree [path]${reset}        ${accent}->${reset} ${desc}broot: interactive directory tree${reset}
+  ${command}ff <name>${reset}          ${accent}->${reset} ${desc}fd: fast file finder shortcut${reset}
+  ${command}bat <file>${reset}         ${accent}->${reset} ${desc}syntax-highlighted file viewer with line numbers${reset}
+  ${command}rg <pattern>${reset}       ${accent}->${reset} ${desc}ripgrep: ultra-fast text search${reset}
+  ${command}dust${reset}               ${accent}->${reset} ${desc}interactive visual disk usage analyzer${reset}
+  ${command}btm${reset}                ${accent}->${reset} ${desc}bottom: modern CPU, memory & process monitor${reset}
+  ${command}procs${reset}              ${accent}->${reset} ${desc}modern process tree and status viewer${reset}
+  ${command}yazi${reset}               ${accent}->${reset} ${desc}terminal file manager${reset}
+  ${command}gitui${reset}              ${accent}->${reset} ${desc}interactive terminal git user interface${reset}
+  ${command}tokei [path]${reset}       ${accent}->${reset} ${desc}count lines of code by language${reset}
+  ${command}hyperfine <cmd>${reset}    ${accent}->${reset} ${desc}benchmark execution speed of commands${reset}
+  ${command}xh <url>${reset}           ${accent}->${reset} ${desc}friendly HTTP client for APIs${reset}
+  ${command}broot${reset}              ${accent}->${reset} ${desc}interactive directory tree navigation${reset}
 
 ${section}System${reset}
 ${dim}----------------------------------------------------${reset}
   ${command}touch <file>${reset}       ${accent}->${reset} ${desc}Create empty file or update timestamp${reset}
   ${command}mkcd <dir>${reset}         ${accent}->${reset} ${desc}Create a folder and enter it${reset}
   ${command}trash <path>${reset}       ${accent}->${reset} ${desc}Move to Recycle Bin (safe delete)${reset}
-  ${command}sed <f> <find> <rep>${reset} ${accent}->${reset} ${desc}Replace text inside a file${reset}
   ${command}pgrep / pkill / k9${reset} ${accent}->${reset} ${desc}Find / kill processes by name${reset}
-  ${command}which <name>${reset}       ${accent}->${reset} ${desc}Show the executable path of a command${reset}
   ${command}unzip <file>${reset}       ${accent}->${reset} ${desc}Extract a .zip file${reset}
   ${command}c${reset}                  ${accent}->${reset} ${desc}Clear the screen (Clear-Host)${reset}
   ${command}uptime${reset}             ${accent}->${reset} ${desc}Show how long the PC has been on${reset}

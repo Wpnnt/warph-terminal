@@ -29,19 +29,6 @@ function ff ($Name) {
     else { Get-ChildItem -Recurse -Filter $Name -File | Select-Object -ExpandProperty FullName }
 }
 
-function head ($Path, [int]$Lines = 10) {
-    if (_has bat) { bat -r ":$Lines" --style=plain $Path }
-    else { Get-Content $Path -Head $Lines }
-}
-
-function sed ($File, $Find, $Replace) {
-    (Get-Content $File).replace("$Find", $Replace) | Set-Content $file
-}
-
-function which ($Name) {
-    (Get-Command $Name).Source
-}
-
 # Process Management
 function pgrep ($Name) {
     Get-Process -Name $Name -ErrorAction SilentlyContinue
@@ -75,5 +62,3 @@ function winutil {
 # System Aliases
 Set-Alias -Name c -Value Clear-Host
 Set-Alias -Name unzip -Value Expand-Archive
-if (_has rg) { Set-Alias -Name grep -Value rg }
-else { Set-Alias -Name grep -Value Select-String }

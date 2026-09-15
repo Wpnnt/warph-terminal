@@ -108,21 +108,21 @@ When prompted, choose your preferred target:
 
 Run `.\scripts\install-rust-tools.ps1` to install modern CLI alternatives via `winget`:
 
-| Tool | Alias | Replaces / Role |
+| Tool | Command | Description |
 |---|---|---|
-| [eza](https://github.com/eza-community/eza) | `la`, `ll` | Modern `ls` with icons, file metadata, and Git status |
-| [bat](https://github.com/sharkdp/bat) | `cat` | Syntax-highlighted file pager |
-| [fd](https://github.com/sharkdp/fd) | `ff` | Fast recursive file search |
-| [bottom](https://github.com/ClementTsang/bottom) | `top` | Graphical system and process monitor |
-| [dust](https://github.com/bootandy/dust) | `du` | Visual disk usage analyzer |
-| [broot](https://github.com/Canop/broot) | `tree` | Interactive directory tree navigator |
-| [procs](https://github.com/dalance/procs) | `ps2` | Modern process viewer |
-| [tokei](https://github.com/XAMPPRocky/tokei) | `loc` | Codebase line counter |
-| [hyperfine](https://github.com/sharkdp/hyperfine) | `bench` | CLI command benchmarking tool |
-| [gitui](https://github.com/extrawurst/gitui) | `gui` | Terminal UI for Git |
-| [yazi](https://github.com/sxyazi/yazi) | `fm` | Terminal file manager |
-| [xh](https://github.com/ducaale/xh) | `http` | HTTP client for APIs |
-| [atuin](https://github.com/atuinsh/atuin) | — | Shell history search and sync |
+| [eza](https://github.com/eza-community/eza) | `eza` (shortcuts: `la`, `ll`) | Modern `ls` alternative with icons, file metadata, and Git status |
+| [bat](https://github.com/sharkdp/bat) | `bat` | Syntax-highlighted file viewer with git integration |
+| [fd](https://github.com/sharkdp/fd) | `fd` (shortcut: `ff`) | Fast recursive file search |
+| [bottom](https://github.com/ClementTsang/bottom) | `btm` | Graphical system and process monitor |
+| [dust](https://github.com/bootandy/dust) | `dust` | Visual and interactive disk usage analyzer |
+| [broot](https://github.com/Canop/broot) | `broot` | Interactive directory tree navigator |
+| [procs](https://github.com/dalance/procs) | `procs` | Modern process viewer and resource monitor |
+| [tokei](https://github.com/XAMPPRocky/tokei) | `tokei` | Codebase line and language counter |
+| [hyperfine](https://github.com/sharkdp/hyperfine) | `hyperfine` | CLI command benchmarking tool |
+| [gitui](https://github.com/extrawurst/gitui) | `gitui` | Interactive terminal UI for Git |
+| [yazi](https://github.com/sxyazi/yazi) | `yazi` | Lightning-fast terminal file manager |
+| [xh](https://github.com/ducaale/xh) | `xh` | Modern, friendly HTTP client for REST APIs |
+| [atuin](https://github.com/atuinsh/atuin) | `atuin` | Shell history search and sync |
 
 ---
 
@@ -136,15 +136,29 @@ Run `.\scripts\install-rust-tools.ps1` to install modern CLI alternatives via `w
 | `mkcd <dir>` | Create a directory and immediately enter it |
 | `trash <path>` | Move a file or folder to the Windows Recycle Bin |
 | `ff <glob>` | Fast search for files by name (`fd` or `Get-ChildItem`) |
-| `head <file>` | Print the first 10 lines of a file |
-| `sed <file> <find> <replace>` | Inline search and replace in a file |
-| `which <cmd>` | Locate the executable path of a command |
-| `la` | List files including hidden items with icons |
-| `ll` | Detailed file list with Git status and permissions |
-| `cat <file>` | Print file contents with syntax highlighting (`bat` or `Get-Content`) |
-| `du` | Show interactive disk usage (`dust` or fallback) |
-| `tree` | Interactive directory tree navigation |
+| `la` | List files including hidden items with icons (`eza`) |
+| `ll` | Detailed file list with Git status and permissions (`eza`) |
 | `cleantemp` | Remove temporary files in `%TEMP%` and report reclaimed space |
+
+### Modern CLI Tools
+
+Modern command-line utilities installed via `scripts/install-rust-tools.ps1` using their native, standard commands:
+
+| Command | Tool | Description |
+|---|---|---|
+| `eza` (`la`, `ll`) | [eza](https://github.com/eza-community/eza) | Directory listing with icons and Git status |
+| `bat <file>` | [bat](https://github.com/sharkdp/bat) | File viewer with syntax highlighting and line numbers |
+| `rg <pattern>` | [ripgrep](https://github.com/BurntSushi/ripgrep) | Ultra-fast recursive regex search |
+| `fd <pattern>` (`ff`) | [fd](https://github.com/sharkdp/fd) | Fast file finder |
+| `dust` | [dust](https://github.com/bootandy/dust) | Interactive, visual disk space usage |
+| `btm` | [bottom](https://github.com/ClementTsang/bottom) | Graphical CPU, memory, and process monitor |
+| `procs` | [procs](https://github.com/dalance/procs) | Modern process tree and status viewer |
+| `yazi` | [yazi](https://github.com/sxyazi/yazi) | Lightning-fast terminal file manager |
+| `gitui` | [gitui](https://github.com/extrawurst/gitui) | Interactive terminal-based Git GUI |
+| `tokei [path]` | [tokei](https://github.com/XAMPPRocky/tokei) | Count lines of code by programming language |
+| `hyperfine <cmd>` | [hyperfine](https://github.com/sharkdp/hyperfine) | Command-line execution benchmarking |
+| `xh <args>` | [xh](https://github.com/ducaale/xh) | Fast and friendly HTTP client for REST APIs |
+| `broot` | [broot](https://github.com/Canop/broot) | Interactive directory tree navigation |
 
 ### WSL Management
 
@@ -191,12 +205,6 @@ Run `.\scripts\install-rust-tools.ps1` to install modern CLI alternatives via `w
 |---|---|
 | `nuke` | Clean build artifacts (`node_modules`, `.next`, `dist`, `target`) and reinstall dependencies |
 | `killport <port>` | Find and terminate the process listening on a specified TCP port |
-| `top` | Launch system and process monitor (`bottom`) |
-| `ps2` | Modern process tree viewer (`procs`) |
-| `loc` | Count lines of code by language (`tokei`) |
-| `bench <cmd>` | Benchmark execution time of a command (`hyperfine`) |
-| `http <args>` | Fast HTTP tool for APIs (`xh`) |
-| `fm` | Terminal file manager (`yazi`) |
 | `uptime` | Display Windows uptime since last boot |
 
 ### Media Downloader (`yt-dlp`)
@@ -244,7 +252,7 @@ Convert media files directly in your terminal:
 | `pkill <name>` | Gracefully stop running processes by name |
 | `k9 <name>` | Forcefully terminate processes by name (immediate kill) |
 | `c` | Clear the terminal screen (`Clear-Host`) |
-| `grep <pattern>` | Search text with `ripgrep` (`rg`) or fallback to `Select-String` |
+| `unzip <file>` | Extract a .zip archive |
 | `Show-Help` | Render an organized overview of all available commands |
 
 ---
