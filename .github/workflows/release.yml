@@ -2,12 +2,14 @@ name: Release Package
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
   workflow_dispatch:
     inputs:
       bump:
-        description: 'Semantic version bump'
+        description: 'Semantic version bump (auto, patch, minor, major)'
         required: true
         default: 'auto'
         type: choice
@@ -43,15 +45,23 @@ jobs:
         id: resolve_tag
         shell: pwsh
         run: |
-          if ($env:GITHUB_EVENT_NAME -eq 'push') {
+          $isTag = ($env:GITHUB_REF_TYPE -eq 'tag')
+
+          if ($isTag) {
               $tag = $env:GITHUB_REF_NAME
               Write-Host "Triggered by tag push: $tag"
+              "tag_name=$tag" >> $env:GITHUB_OUTPUT
+              "should_release=true" >> $env:GITHUB_OUTPUT
           } else {
               $customVer = "${{ inputs.custom_version }}"
               $bumpType  = "${{ inputs.bump }}"
+              if (-not $bumpType) { $bumpType = 'auto' }
 
               if ($customVer) {
                   $tag = if ($customVer.StartsWith('v')) { $customVer } else { "v$customVer" }
+                  "tag_name=$tag" >> $env:GITHUB_OUTPUT
+                  "should_release=true" >> $env:GITHUB_OUTPUT
+                  Write-Host "Manual custom version specified: $tag"
               } else {
                   $latestTag = git tag -l "v*" --sort=-v:refname | Select-Object -First 1
                   if (-not $latestTag) { $latestTag = "v1.0.0" }
@@ -61,15 +71,36 @@ jobs:
                       $maj = [int]$matches[1]; $min = [int]$matches[2]; $pat = [int]$matches[3]
                   }
 
+                  $commits = @(git log "$latestTag..HEAD" --oneline)
+                  if ($commits.Count -eq 0) {
+                      Write-Host "No new commits since $latestTag. Skipping release."
+                      "should_release=false" >> $env:GITHUB_OUTPUT
+                      return
+                  }
+
                   if ($bumpType -eq 'auto') {
-                      $commits = git log "$latestTag..HEAD" --oneline
-                      if ($commits -match '(?i)BREAKING CHANGE|!:') {
+                      $commitText = $commits -join "`n"
+                      if ($commitText -match '(?i)BREAKING CHANGE|!:') {
                           $bumpType = 'major'
-                      } elseif ($commits -match '(?i)feat(?:\(.*?\))?:') {
+                          $shouldRelease = $true
+                      } elseif ($commitText -match '(?i)feat(?:\(.*?\))?:') {
                           $bumpType = 'minor'
-                      } else {
+                          $shouldRelease = $true
+                      } elseif ($commitText -match '(?i)fix(?:\(.*?\))?:') {
                           $bumpType = 'patch'
+                          $shouldRelease = $true
+                      } else {
+                          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
+                              $bumpType = 'patch'
+                              $shouldRelease = $true
+                          } else {
+                              Write-Host "No release-worthy commits (feat/fix/breaking) found since $latestTag. Skipping release."
+                              "should_release=false" >> $env:GITHUB_OUTPUT
+                              return
+                          }
                       }
+                  } else {
+                      $shouldRelease = $true
                   }
 
                   switch ($bumpType) {
@@ -77,25 +108,22 @@ jobs:
                       'minor' { $tag = "v$maj.$($min + 1).0" }
                       'patch' { $tag = "v$maj.$min.$($pat + 1)" }
                   }
-              }
 
-              Write-Host "Creating and pushing tag: $tag"
-              git config user.name "github-actions[bot]"
-              git config user.email "github-actions[bot]@users.noreply.github.com"
-              git tag -a $tag -m "Release $tag"
-              git push origin $tag
+                  Write-Host "Calculated release tag: $tag (Bump: $bumpType)"
+                  "tag_name=$tag" >> $env:GITHUB_OUTPUT
+                  "should_release=true" >> $env:GITHUB_OUTPUT
+              }
           }
 
-          "tag_name=$tag" >> $env:GITHUB_OUTPUT
-
       - name: Create Release Zip Archive
+        if: steps.resolve_tag.outputs.should_release == 'true'
         shell: pwsh
         run: |
           $tag = "${{ steps.resolve_tag.outputs.tag_name }}"
           $dist = "warph-terminal"
           New-Item -ItemType Directory -Path $dist -Force | Out-Null
           Copy-Item -Path src, scripts, themes, tests, assets -Destination $dist -Recurse
-          Copy-Item -Path setup.ps1, install.cmd, README.md, CONTRIBUTING.md, LICENSE, .gitignore -Destination $dist
+          Copy-Item -Path setup.ps1, install.cmd, README.md, CONTRIBUTING.md, LICENSE, .gitignore, package.json -Destination $dist
 
           # Versioned zip and canonical latest zip
           $versionedZip = "warph-terminal-$tag.zip"
@@ -105,6 +133,7 @@ jobs:
           Write-Host "Created archive: $versionedZip and $genericZip"
 
       - name: Publish GitHub Release
+        if: steps.resolve_tag.outputs.should_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.resolve_tag.outputs.tag_name }}
