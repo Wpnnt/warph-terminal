@@ -38,7 +38,7 @@ Before installing, ensure you have:
 Run this one-liner in PowerShell 7 to download and launch the installer directly:
 
 ```powershell
-irm tinyurl.com/warph-terminal | iex
+irm da.gd/warph | iex
 ```
 
 ### Option 2: Release ZIP (One-Click)
