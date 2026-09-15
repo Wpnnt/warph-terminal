@@ -66,18 +66,18 @@ $profileSrc       = Join-Path $repoRoot "src\Microsoft.PowerShell_profile.ps1"
 $configSrc        = Join-Path $repoRoot "src\config"
 $modulesSrc       = Join-Path $repoRoot "src\modules"
 $assetsSrc        = Join-Path $repoRoot "assets"
-$themeSrc         = Join-Path $repoRoot "themes\cobalt2.omp.json"
+$themeSrc         = Join-Path $repoRoot "themes\warph.omp.json"
 if (-not (Test-Path -LiteralPath $themeSrc)) {
-    $themeSrc = Join-Path $repoRoot "cobalt2.omp.json"
+    $themeSrc = Join-Path $repoRoot "warph.omp.json"
 }
 
 $userHome         = [Environment]::GetFolderPath('UserProfile')
 $installDir       = Join-Path $userHome ".warph-terminal"
 $installedProfile = Join-Path $installDir "Microsoft.PowerShell_profile.ps1"
-$installedTheme   = Join-Path $installDir "cobalt2.omp.json"
+$installedTheme   = Join-Path $installDir "warph.omp.json"
 $installedLogo    = Join-Path $installDir "assets\logo.svg"
 $profileDir       = Split-Path $PROFILE
-$themeDest        = Join-Path $profileDir "cobalt2.omp.json"
+$themeDest        = Join-Path $profileDir "warph.omp.json"
 
 function Write-Step ($n, $total, $msg) {
     if (-not $Quiet) {
@@ -387,7 +387,7 @@ function Invoke-InstallAction ($selectedMode, $noOptional, $customFont) {
     if (Test-Path -LiteralPath $themeSrc) {
         $targetThemeDir = Join-Path $installDir "themes"
         New-Item -ItemType Directory -Force -Path $targetThemeDir | Out-Null
-        Copy-Item -LiteralPath $themeSrc -Destination (Join-Path $targetThemeDir "cobalt2.omp.json") -Force
+        Copy-Item -LiteralPath $themeSrc -Destination (Join-Path $targetThemeDir "warph.omp.json") -Force
         Copy-Item -LiteralPath $themeSrc -Destination $installedTheme -Force
         Write-Ok "Theme copied -> $installedTheme"
         # Also copy to $profileDir for oh-my-posh fallback
@@ -442,9 +442,48 @@ function Invoke-InstallAction ($selectedMode, $noOptional, $customFont) {
                 }
             }
 
+            # Add or update custom 'Warph' color scheme (matching logo colors)
+            $warphScheme = [ordered]@{
+                name                = "Warph"
+                background          = "#0C0D0D"
+                foreground          = "#EBE9EA"
+                cursorColor         = "#F9F7F9"
+                selectionBackground = "#343636"
+                black               = "#0C0D0D"
+                blue                = "#61AFEF"
+                cyan                = "#56B6C2"
+                green               = "#98C379"
+                purple              = "#C678DD"
+                red                 = "#E06C75"
+                white               = "#ABABAE"
+                yellow              = "#E5C07B"
+                brightBlack         = "#49494B"
+                brightBlue          = "#7CB7FF"
+                brightCyan          = "#6BD0DB"
+                brightGreen         = "#A0CCA0"
+                brightPurple        = "#D49BFA"
+                brightRed           = "#BE5046"
+                brightWhite         = "#F9F7F9"
+                brightYellow        = "#E5C07B"
+            }
+
+            if (-not $json.schemes) {
+                $json | Add-Member -MemberType NoteProperty -Name "schemes" -Value @() -Force
+            }
+            $existingScheme = $json.schemes | Where-Object { $_.name -eq "Warph" }
+            if ($existingScheme) {
+                foreach ($k in $warphScheme.Keys) {
+                    $existingScheme.$k = $warphScheme[$k]
+                }
+            } else {
+                $json.schemes += [PSCustomObject]$warphScheme
+            }
+            Write-Ok "Color scheme 'Warph' registered in Windows Terminal (Logo Noir & Silver)"
+
             $existing = $json.profiles.list | Where-Object { $_.name -eq $profileName }
             if ($existing) {
                 $existing.commandline = $cmdline
+                $existing.colorScheme = "Warph"
                 if (Test-Path -LiteralPath $installedLogo) {
                     $existing.icon = $installedLogo
                 }
@@ -463,6 +502,7 @@ function Invoke-InstallAction ($selectedMode, $noOptional, $customFont) {
                     guid             = $profileGuid
                     commandline      = $cmdline
                     icon             = $iconPath
+                    colorScheme      = "Warph"
                     font             = [ordered]@{
                         face = $targetFont
                     }
@@ -669,7 +709,7 @@ function Invoke-RepairAction {
     if (Test-Path -LiteralPath $themeSrc) {
         $targetThemeDir = Join-Path $installDir "themes"
         New-Item -ItemType Directory -Force -Path $targetThemeDir | Out-Null
-        Copy-Item -LiteralPath $themeSrc -Destination (Join-Path $targetThemeDir "cobalt2.omp.json") -Force
+        Copy-Item -LiteralPath $themeSrc -Destination (Join-Path $targetThemeDir "warph.omp.json") -Force
         Copy-Item -LiteralPath $themeSrc -Destination $installedTheme -Force
         Copy-Item -LiteralPath $themeSrc -Destination $themeDest -Force
         Write-Ok "Theme updated in $installDir and `$PROFILE dir"
@@ -840,7 +880,7 @@ function Invoke-UninstallAction ($isForce) {
     # 4. Clean copied theme in $profileDir
     if (Test-Path -LiteralPath $themeDest) {
         Remove-Item -LiteralPath $themeDest -Force -ErrorAction SilentlyContinue
-        Write-Ok "Removed copied cobalt2.omp.json"
+        Write-Ok "Removed copied warph.omp.json"
     }
 
     Write-Host ""

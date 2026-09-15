@@ -1,0 +1,14 @@
+{
+  "name": "warph-terminal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Modular PowerShell terminal environment and custom prompt theme",
+  "scripts": {
+    "prepare": "husky",
+    "test": "pwsh -NoProfile -File tests/run-tests.ps1",
+    "quality-gate": "pwsh -NoProfile -File scripts/quality-gate.ps1"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

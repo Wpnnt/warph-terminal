@@ -18,3 +18,7 @@ $RECYCLE.BIN/
 *.tmp
 *.bak
 LastExecutionTime.txt
+
+# Node / Dependencies
+node_modules/
+

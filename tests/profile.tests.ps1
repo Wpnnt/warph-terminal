@@ -46,9 +46,9 @@ $loadResult = pwsh -NoProfile -Command $testCmd
 $t4 = Assert-Condition "Profile loads successfully and registers core functions" { $loadResult -eq 'True' }
 if (-not $t4) { $allPass = $false }
 
-# Test 5: Themes directory has cobalt2
-$themeFile = Join-Path $repoRoot "themes\cobalt2.omp.json"
-$t5 = Assert-Condition "themes/cobalt2.omp.json exists" { Test-Path $themeFile }
+# Test 5: Themes directory has warph
+$themeFile = Join-Path $repoRoot "themes\warph.omp.json"
+$t5 = Assert-Condition "themes/warph.omp.json exists" { Test-Path $themeFile }
 if (-not $t5) { $allPass = $false }
 
 # Test 6: Root setup.ps1 and helper scripts exist

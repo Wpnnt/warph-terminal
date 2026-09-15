@@ -2,13 +2,13 @@
 
 if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
     $_themeCandidates = @(
-        (Join-Path $PSScriptRoot "..\..\themes\cobalt2.omp.json"),
-        (Join-Path $PSScriptRoot "..\themes\cobalt2.omp.json"),
-        (Join-Path $PSScriptRoot "themes\cobalt2.omp.json"),
-        (Join-Path $PSScriptRoot "cobalt2.omp.json"),
-        (Join-Path ([Environment]::GetFolderPath('UserProfile')) ".warph-terminal\themes\cobalt2.omp.json"),
-        (Join-Path ([Environment]::GetFolderPath('UserProfile')) ".warph-terminal\cobalt2.omp.json"),
-        (Join-Path (Split-Path $PROFILE) "cobalt2.omp.json")
+        (Join-Path $PSScriptRoot "..\..\themes\warph.omp.json"),
+        (Join-Path $PSScriptRoot "..\themes\warph.omp.json"),
+        (Join-Path $PSScriptRoot "themes\warph.omp.json"),
+        (Join-Path $PSScriptRoot "warph.omp.json"),
+        (Join-Path ([Environment]::GetFolderPath('UserProfile')) ".warph-terminal\themes\warph.omp.json"),
+        (Join-Path ([Environment]::GetFolderPath('UserProfile')) ".warph-terminal\warph.omp.json"),
+        (Join-Path (Split-Path $PROFILE) "warph.omp.json")
     )
     $_themePath = $_themeCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
     if ($_themePath) {

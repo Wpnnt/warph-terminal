@@ -33,7 +33,7 @@ Warph Terminal replaces monolithic PowerShell profiles with a lightweight, decou
 Before installing, ensure you have:
 
 1. **[PowerShell 7.4+](https://github.com/PowerShell/PowerShell/releases)** (`pwsh.exe`)
-2. **[Windows Terminal](https://apps.microsoft.com/detail/9n0dx20hk701)** (**Required host** — the legacy `conhost.exe` console cannot render Nerd Font glyphs, Cobalt2 true-color ANSI, or SVG profile icons)
+2. **[Windows Terminal](https://apps.microsoft.com/detail/9n0dx20hk701)** (**Required host** — the legacy `conhost.exe` console cannot render Nerd Font glyphs, true-color ANSI, or SVG profile icons)
 3. **A Nerd Font** *(Optional)* — e.g., [CaskaydiaCove Nerd Font](https://www.nerdfonts.com/font-downloads) or [JetBrainsMono NF] to render extra prompt icons and glyphs. If skipped or not installed, Warph Terminal cleanly defaults to standard built-in system fonts (**Cascadia Mono** / **Consolas**) without errors.
 
 > [!TIP]
@@ -97,7 +97,7 @@ When prompted, choose your preferred target:
 
 | Dependency | Purpose |
 |---|---|
-| [oh-my-posh](https://ohmyposh.dev) | Prompt engine (bundled with the Cobalt2 theme) |
+| [oh-my-posh](https://ohmyposh.dev) | Prompt engine (bundled with the custom Warph logo theme) |
 | [zoxide](https://github.com/ajeetdsouza/zoxide) | Smarter `cd` command with directory frecency |
 | [Terminal-Icons](https://github.com/devblackops/Terminal-Icons) | File and folder icons in directory listings |
 | [yt-dlp](https://github.com/yt-dlp/yt-dlp) | Video and audio downloader (`yt`, `yti`, `yta`, `vyt`, `vyta`) |
@@ -300,7 +300,7 @@ warph-terminal/
 │   ├── run-tests.ps1                 # Unified test suite runner
 │   └── profile.tests.ps1             # AST and functional test assertions
 ├── themes/
-│   └── cobalt2.omp.json              # Default Oh My Posh Cobalt2 theme
+│   └── warph.omp.json                # Default Oh My Posh theme (Warph Cyber Noir & Silver)
 ├── setup.ps1                         # Root interactive installer entrypoint
 ├── install.cmd                       # One-click Windows launcher for zip downloads
 ├── CONTRIBUTING.md                   # Branching workflow, commit guidelines, and PR rules

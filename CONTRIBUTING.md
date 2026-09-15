@@ -31,7 +31,7 @@ If you add a new command or alias, you must update 3 places:
 
 > The automated test runner verifies that all functions exist in both `Show-Help` and `README.md`. If one is missing, tests will fail.
 
-### 4. Run the Tests
+### 4. Run the Tests & Quality Gate
 
 Before opening a pull request, run the test suite to verify syntax and synchronization:
 
@@ -39,7 +39,7 @@ Before opening a pull request, run the test suite to verify syntax and synchroni
 pwsh -NoProfile -File tests/run-tests.ps1
 ```
 
-All 24 scripts must pass AST parsing and the 3-Way Sync check.
+All project scripts must pass AST parsing and the 3-Way Sync check. Additionally, automated Git pre-commit hooks via Husky are configured in `.husky/` to enforce clean syntax, zero unrendered emojis, and portable paths on every `git commit`.
 
 ### 5. Commit & Open a Pull Request
 
@@ -74,3 +74,36 @@ Then open a Pull Request against the `main` branch. GitHub Actions will automati
   ```powershell
   Write-Host "✓ Copied to clipboard" -ForegroundColor Green
   ```
+
+---
+
+## Release Process
+
+Warph Terminal features automated release packaging and Semantic Versioning:
+
+### Option A: Local Release Script (Interactive)
+
+Run the release automation tool:
+
+```powershell
+.\scripts\release.ps1
+```
+
+- Automatically executes pre-flight tests and latency benchmarks.
+- Inspects commit messages since the last tag to calculate the appropriate SemVer bump (`major`, `minor`, or `patch`).
+- Prompts for confirmation, generates the annotated Git tag, and pushes to GitHub.
+
+You can also pass arguments directly:
+```powershell
+.\scripts\release.ps1 -Bump minor -Push   # Direct minor bump
+.\scripts\release.ps1 -Version v1.2.0     # Explicit version
+.\scripts\release.ps1 -DryRun             # Preview version plan
+```
+
+### Option B: One-Click GitHub Actions (`workflow_dispatch`)
+
+1. Go to the **Actions** tab on GitHub.
+2. Select the **Release Package** workflow.
+3. Click **Run workflow**, choose the bump type (`auto`, `patch`, `minor`, `major`), and run.
+4. The workflow verifies the codebase, creates the tag, packages `warph-terminal.zip`, and publishes the release notes.
+

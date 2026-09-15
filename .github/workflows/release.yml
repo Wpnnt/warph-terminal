@@ -4,6 +4,23 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Semantic version bump'
+        required: true
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+      custom_version:
+        description: 'Specific version override (e.g. 1.2.0)'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: write
@@ -15,24 +32,82 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Run Test Suite
         shell: pwsh
         run: pwsh -NoProfile -File tests/run-tests.ps1 -Benchmark
 
+      - name: Resolve Release Tag
+        id: resolve_tag
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_EVENT_NAME -eq 'push') {
+              $tag = $env:GITHUB_REF_NAME
+              Write-Host "Triggered by tag push: $tag"
+          } else {
+              $customVer = "${{ inputs.custom_version }}"
+              $bumpType  = "${{ inputs.bump }}"
+
+              if ($customVer) {
+                  $tag = if ($customVer.StartsWith('v')) { $customVer } else { "v$customVer" }
+              } else {
+                  $latestTag = git tag -l "v*" --sort=-v:refname | Select-Object -First 1
+                  if (-not $latestTag) { $latestTag = "v1.0.0" }
+
+                  $maj = 1; $min = 0; $pat = 0
+                  if ($latestTag -match '^v?(\d+)\.(\d+)\.(\d+)$') {
+                      $maj = [int]$matches[1]; $min = [int]$matches[2]; $pat = [int]$matches[3]
+                  }
+
+                  if ($bumpType -eq 'auto') {
+                      $commits = git log "$latestTag..HEAD" --oneline
+                      if ($commits -match '(?i)BREAKING CHANGE|!:') {
+                          $bumpType = 'major'
+                      } elseif ($commits -match '(?i)feat(?:\(.*?\))?:') {
+                          $bumpType = 'minor'
+                      } else {
+                          $bumpType = 'patch'
+                      }
+                  }
+
+                  switch ($bumpType) {
+                      'major' { $tag = "v$($maj + 1).0.0" }
+                      'minor' { $tag = "v$maj.$($min + 1).0" }
+                      'patch' { $tag = "v$maj.$min.$($pat + 1)" }
+                  }
+              }
+
+              Write-Host "Creating and pushing tag: $tag"
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              git tag -a $tag -m "Release $tag"
+              git push origin $tag
+          }
+
+          "tag_name=$tag" >> $env:GITHUB_OUTPUT
+
       - name: Create Release Zip Archive
         shell: pwsh
         run: |
+          $tag = "${{ steps.resolve_tag.outputs.tag_name }}"
           $dist = "warph-terminal"
           New-Item -ItemType Directory -Path $dist -Force | Out-Null
           Copy-Item -Path src, scripts, themes, tests, assets -Destination $dist -Recurse
           Copy-Item -Path setup.ps1, install.cmd, README.md, CONTRIBUTING.md, LICENSE, .gitignore -Destination $dist
-          $zipName = "warph-terminal-$($env:GITHUB_REF_NAME).zip"
-          Compress-Archive -Path $dist -DestinationPath $zipName -Force
-          Write-Host "Created archive: $zipName"
+
+          # Versioned zip and canonical latest zip
+          $versionedZip = "warph-terminal-$tag.zip"
+          $genericZip   = "warph-terminal.zip"
+          Compress-Archive -Path $dist -DestinationPath $versionedZip -Force
+          Copy-Item -Path $versionedZip -Destination $genericZip -Force
+          Write-Host "Created archive: $versionedZip and $genericZip"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: warph-terminal-*.zip
+          tag_name: ${{ steps.resolve_tag.outputs.tag_name }}
+          name: Warph Terminal ${{ steps.resolve_tag.outputs.tag_name }}
+          files: warph-terminal*.zip
           generate_release_notes: true
