@@ -1,0 +1,21 @@
+name: Audit & 3-Way Sync
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  audit:
+    name: Profile AST & 3-Way Sync Gate
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Test Suite & Benchmark
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File tests/run-tests.ps1 -Benchmark
+

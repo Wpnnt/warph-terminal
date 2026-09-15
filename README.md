@@ -33,7 +33,21 @@ Before installing, ensure you have:
 
 ## Installation
 
-Clone the repository and run the setup script:
+### Option 1: Quick Install (Recommended)
+
+Run this one-liner in PowerShell 7 to download and launch the installer directly:
+
+```powershell
+irm tinyurl.com/warph-terminal | iex
+```
+
+### Option 2: Release ZIP (One-Click)
+
+1. Download the latest `warph-terminal.zip` from [Releases](https://github.com/Wpnnt/warph-terminal/releases).
+2. Extract the archive.
+3. Double-click **`install.cmd`** to run the setup automatically.
+
+### Option 3: Git Clone
 
 ```powershell
 git clone https://github.com/Wpnnt/warph-terminal.git
@@ -41,7 +55,11 @@ cd warph-terminal
 .\setup.ps1
 ```
 
-The installer will prompt you to select an installation target:
+---
+
+### Setup Modes
+
+When prompted, choose your preferred target:
 
 | Option | Mode | Details |
 |---|---|---|
@@ -241,6 +259,7 @@ warph-terminal/
 │       └── audit.yml                 # CI workflow: syntax, functional tests, and 3-way sync
 ├── scripts/
 │   ├── setup.ps1                     # Core setup engine (install, repair, uninstall)
+│   ├── web-install.ps1               # Standalone web installer for irm | iex
 │   ├── install.ps1                   # Non-interactive quick installation
 │   ├── install-rust-tools.ps1        # Optional CLI tools installer
 │   ├── uninstall.ps1                 # Clean profile restoration
@@ -267,7 +286,8 @@ warph-terminal/
 │   └── profile.tests.ps1             # AST and functional test assertions
 ├── themes/
 │   └── cobalt2.omp.json              # Default Oh My Posh Cobalt2 theme
-├── setup.ps1                         # Root installer entrypoint
+├── setup.ps1                         # Root interactive installer entrypoint
+├── install.cmd                       # One-click Windows launcher for zip downloads
 ├── CONTRIBUTING.md                   # Branching workflow, commit guidelines, and PR rules
 ├── LICENSE                           # MIT License
 ├── README.md                         # Command reference and project documentation

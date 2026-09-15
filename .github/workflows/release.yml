@@ -1,0 +1,38 @@
+name: Release Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Publish Release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Test Suite
+        shell: pwsh
+        run: pwsh -NoProfile -File tests/run-tests.ps1 -Benchmark
+
+      - name: Create Release Zip Archive
+        shell: pwsh
+        run: |
+          $dist = "warph-terminal"
+          New-Item -ItemType Directory -Path $dist -Force | Out-Null
+          Copy-Item -Path src, scripts, themes, tests -Destination $dist -Recurse
+          Copy-Item -Path setup.ps1, install.cmd, README.md, CONTRIBUTING.md, LICENSE, .gitignore -Destination $dist
+          $zipName = "warph-terminal-$($env:GITHUB_REF_NAME).zip"
+          Compress-Archive -Path $dist -DestinationPath $zipName -Force
+          Write-Host "Created archive: $zipName"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: warph-terminal-*.zip
+          generate_release_notes: true

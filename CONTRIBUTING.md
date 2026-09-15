@@ -1,82 +1,76 @@
 # Contributing to Warph Terminal
 
-Thank you for your interest in contributing to **Warph Terminal**! To maintain stability, cross-machine portability, and code quality, please adhere to the following workflow and conventions.
+Contributions are welcome! Whether you are adding a new shortcut, fixing a bug, or improving documentation, follow this quick guide.
 
 ---
 
-## Git Branching Model
+## How to Contribute
 
-We follow an adapted **Git Flow / GitHub Flow** model:
+### 1. Create a Branch
 
-```
-main (production releases & tags vX.Y.Z)
-  ^
-  | (merge via Release PR)
-develop (active development & integration)
-  ^                     ^
-  | (feature branch)     | (bugfix branch)
-feature/<name>        fix/<name>
-```
-
-### Branch Rules
-
-| Branch | Purpose | Target / Base | Direct Commits? |
-|--------|---------|---------------|-----------------|
-| `main` | Production-ready, stable releases. Always working and installable. | Tagged releases (`v2.0.0`) | No (PR only) |
-| `develop` | Integration branch where features and fixes land. | Base for new branches | Preferred via PR/feature |
-| `feature/<name>` | New tools, functions, or major enhancements. | Branch from `develop`, PR to `develop` | Yes |
-| `fix/<name>` | Bugfixes, path resolution, OS compatibility fixes. | Branch from `develop`, PR to `develop` | Yes |
-| `release/<version>` | Staging and testing before merging into `main`. | Branch from `develop`, PR to `main` | Only release prep |
-
----
-
-## Conventional Commits
-
-All commit messages must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
-
-- `feat(<scope>): <description>` - New function or feature
-- `fix(<scope>): <description>` - Bug fix or compatibility correction
-- `docs(<scope>): <description>` - Documentation or README changes
-- `refactor(<scope>): <description>` - Code refactoring without behavioral changes
-- `test(<scope>): <description>` - Test or auditor script updates
-- `chore(<scope>): <description>` - Housekeeping, dependencies, or git configs
-
-**Examples:**
-```bash
-git commit -m "feat(git): add branch management shortcuts"
-git commit -m "fix(installer): handle spaces in username path safely"
-git commit -m "docs: add CONTRIBUTING.md with branch conventions"
-```
-
----
-
-## Development & Coding Standards
-
-1. **Clean Typography**: Use clean ASCII characters and standard text instead of missing/unsupported font glyphs or emojis.
-2. **Terminal Feedback Language**: Terminal output (`Write-Host`) must be in **English**.
-3. **Color Formatting**: Use `$PSStyle.Foreground.*` for styling rather than hardcoded ANSI escape codes.
-4. **Zero Hardcoded Paths**:
-   - Never hardcode drive letters (`C:`, `D:`) or usernames (`Warph11`).
-   - Use `[Environment]::GetFolderPath('UserProfile')`, `$PSScriptRoot`, or `$HOME`.
-5. **Portable Fallbacks**: Every tool relying on external CLI binaries must use the `_has <cmd>` guard with a native PowerShell fallback.
-6. **3-Way Synchronization**:
-   Whenever a new function or shortcut is added:
-   1. Define it in the appropriate module in `src/modules/<domain>.ps1` (or create a new module for a new domain).
-   2. Add it to `Show-Help` in `src/modules/help.ps1` in the matching section.
-   3. Document it in `README.md`.
-
----
-
-## Pre-PR Verification Checklist
-
-Before pushing branches or opening a Pull Request, run the automated test suite and auditor:
+Fork the repository and create a new branch from `main`:
 
 ```powershell
-pwsh -NoProfile -File tests/run-tests.ps1 -Benchmark
+git checkout -b feature/my-new-shortcut
 ```
 
-Ensure that:
-- [ ] PowerShell AST parser returns **0 syntax errors**.
-- [ ] 3-Way Sync reports **100% matched functions**.
-- [ ] No hardcoded user paths are detected.
-- [ ] Zero emojis rule is respected.
+*(Use `fix/<description>` for bug fixes).*
+
+### 2. Make Your Changes
+
+- **Domain shortcuts**: Add them to `src/modules/<domain>.ps1` (e.g. `network.ps1`, `media.ps1`, `system.ps1`). If it's a completely new category, create a new `.ps1` file in `src/modules/` — it will be auto-discovered.
+- **Core configuration**: Modify `src/config/` (`env.ps1`, `keybinds.ps1`, `theme.ps1`, `integrations.ps1`).
+
+### 3. Keep 3-Way Synchronization
+
+If you add a new command or alias, you must update 3 places:
+
+1. **The function**: in `src/modules/<domain>.ps1`
+2. **The terminal help**: in `Show-Help` (`src/modules/help.ps1`)
+3. **The documentation**: in the command table of `README.md`
+
+> The automated test runner verifies that all functions exist in both `Show-Help` and `README.md`. If one is missing, tests will fail.
+
+### 4. Run the Tests
+
+Before opening a pull request, run the test suite to verify syntax and synchronization:
+
+```powershell
+pwsh -NoProfile -File tests/run-tests.ps1
+```
+
+All 24 scripts must pass AST parsing and the 3-Way Sync check.
+
+### 5. Commit & Open a Pull Request
+
+Use [Conventional Commits](https://www.conventionalcommits.org/):
+
+```powershell
+git commit -m "feat(network): add curlssl helper"
+git push origin feature/my-new-shortcut
+```
+
+Then open a Pull Request against the `main` branch. GitHub Actions will automatically run the test suite on your PR.
+
+---
+
+## Coding Guidelines
+
+- **Short, mnemonic names**: Prefer 2 to 4 characters for frequent commands (e.g. `cb`, `myip`, `mkcd`, `killport`).
+- **External tool guards**: If wrapping an external binary (`eza`, `bat`, `fd`, `yt-dlp`), always use the `_has` helper with a native PowerShell fallback:
+  ```powershell
+  function cat {
+      param([Parameter(ValueFromRemainingArguments = $true)]$Args)
+      if (_has bat) { bat @Args }
+      else { Get-Content @Args }
+  }
+  ```
+- **Zero hardcoded paths**: Never hardcode user paths or drive letters. Use:
+  - `[Environment]::GetFolderPath('UserProfile')` (user home)
+  - `[Environment]::GetFolderPath('MyVideos')` (videos)
+  - `$PSScriptRoot` (relative script directory)
+- **Terminal output**: Keep all `Write-Host` messages in English. Use `$PSStyle.Foreground.*` for coloring. Avoid raw emojis.
+- **Clipboard feedback**: When a command copies text to the clipboard, show:
+  ```powershell
+  Write-Host "✓ Copied to clipboard" -ForegroundColor Green
+  ```
