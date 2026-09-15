@@ -1,0 +1,20 @@
+# User and machine-specific overrides
+*local.ps1
+*.local.ps1
+
+# Editor and IDE configurations
+.vscode/
+.idea/
+*.swp
+*~
+
+# Operating System files
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Temporary and log files
+*.log
+*.tmp
+*.bak
+LastExecutionTime.txt
