@@ -32,9 +32,12 @@ Warph Terminal replaces monolithic PowerShell profiles with a lightweight, decou
 
 Before installing, ensure you have:
 
-1. **[PowerShell 7+](https://github.com/PowerShell/PowerShell/releases)** (`pwsh.exe`)
-2. **[Windows Terminal](https://apps.microsoft.com/detail/9n0dx20hk701)** (recommended host)
-3. **A Nerd Font** (e.g., [CaskaydiaCove Nerd Font](https://www.nerdfonts.com/font-downloads) or [JetBrainsMono NF]) configured in Windows Terminal to render glyphs and icons.
+1. **[PowerShell 7.4+](https://github.com/PowerShell/PowerShell/releases)** (`pwsh.exe`)
+2. **[Windows Terminal](https://apps.microsoft.com/detail/9n0dx20hk701)** (**Required host** — the legacy `conhost.exe` console cannot render Nerd Font glyphs, Cobalt2 true-color ANSI, or SVG profile icons)
+3. **A Nerd Font** *(Optional)* — e.g., [CaskaydiaCove Nerd Font](https://www.nerdfonts.com/font-downloads) or [JetBrainsMono NF] to render extra prompt icons and glyphs. If skipped or not installed, Warph Terminal cleanly defaults to standard built-in system fonts (**Cascadia Mono** / **Consolas**) without errors.
+
+> [!TIP]
+> **Automatic Prerequisite Setup**: You don't need to install everything manually. Running `.\setup.ps1` (or `install.cmd`) automatically checks your environment and offers to install Windows Terminal and PowerShell 7 via `winget`. Font installation is optional and can be customized at any time with `.\setup.ps1 -SetFont`.
 
 ---
 
@@ -77,8 +80,11 @@ When prompted, choose your preferred target:
 ### Helper Scripts
 
 ```powershell
-.\setup.ps1                  # Interactive management menu (Install, Repair, Uninstall, Audit)
-.\scripts\install.ps1        # Direct non-interactive installation
+.\setup.ps1                  # Interactive management menu (Install, Font, Prereqs, Repair, etc.)
+.\setup.ps1 -CheckPrereqs    # Verify and auto-install Windows Terminal, fonts, and tools
+.\setup.ps1 -SetFont         # Interactive Nerd Font selector & installer
+.\setup.ps1 -Font "<name>"   # Set specific font directly (e.g. -Font "0xProto Nerd Font")
+.\scripts\install.ps1        # Direct non-interactive installation (supports -Font "<name>")
 .\setup.ps1 -Repair          # Refresh scripts and themes in ~/.warph-terminal
 .\scripts\uninstall.ps1      # Clean removal and profile restoration
 ```

@@ -11,8 +11,10 @@ param(
     [ValidateSet('1', '2', '3')]
     [string]$Mode,
 
+    [string]$Font,
+
     [switch]$SkipOptional,
     [switch]$Quiet
 )
 
-& (Join-Path (Split-Path $PSScriptRoot -Parent) "setup.ps1") -Install -Mode:$Mode -SkipOptional:$SkipOptional -Quiet:$Quiet
+& (Join-Path (Split-Path $PSScriptRoot -Parent) "setup.ps1") -Install -Mode:$Mode -Font:$Font -SkipOptional:$SkipOptional -Quiet:$Quiet

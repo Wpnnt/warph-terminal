@@ -32,6 +32,19 @@ param(
     [Parameter(ParameterSetName = 'Audit')]
     [switch]$Audit,
 
+    [Parameter(ParameterSetName = 'Prereqs')]
+    [switch]$CheckPrereqs,
+
+    [Parameter(ParameterSetName = 'Prereqs')]
+    [switch]$InstallPrereqs,
+
+    [Parameter(ParameterSetName = 'Install')]
+    [Parameter(ParameterSetName = 'SetFont')]
+    [string]$Font,
+
+    [Parameter(ParameterSetName = 'SetFont')]
+    [switch]$SetFont,
+
     [switch]$Quiet
 )
 
@@ -83,7 +96,210 @@ function Get-WTSettingsPath {
         "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json",
         "$env:APPDATA\Microsoft\Windows Terminal\settings.json"
     )
-    return ($paths | Where-Object { Test-Path $_ } | Select-Object -First 1)
+    $found = ($paths | Where-Object { Test-Path $_ } | Select-Object -First 1)
+    if ($found) { return $found }
+
+    # If package exists but settings.json has not yet been initialized, create initial structure
+    $pkgDir = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
+    if (Test-Path $pkgDir) {
+        $target = Join-Path $pkgDir "settings.json"
+        @{ profiles = @{ list = @() } } | ConvertTo-Json -Depth 5 | Set-Content $target -Encoding UTF8
+        return $target
+    }
+    return $null
+}
+
+function Test-Prerequisites {
+    [CmdletBinding()]
+    param(
+        [switch]$AutoInstall
+    )
+
+    Write-Host ""
+    Write-Host "${cyn}${bold}  +----------------------------------------------+${rst}"
+    Write-Host "${cyn}${bold}  |       Warph Terminal - Prerequisites Check   |${rst}"
+    Write-Host "${cyn}${bold}  +----------------------------------------------+${rst}"
+    Write-Host ""
+
+    $allPassed = $true
+
+    # 1. PowerShell 7+
+    if ($PSVersionTable.PSVersion.Major -ge 7) {
+        Write-Ok "PowerShell $($PSVersionTable.PSVersion) (Required: 7.4+)"
+    } else {
+        Write-Err "PowerShell 7+ is required. Current: $($PSVersionTable.PSVersion)"
+        $allPassed = $false
+        $doInstallPwsh = $AutoInstall
+        if (-not $doInstallPwsh -and -not $Quiet) {
+            $resp = Read-Host "  Install PowerShell 7 now via winget? [Y/n]"
+            $doInstallPwsh = ($resp -notmatch '^[nN]$')
+        }
+        if ($doInstallPwsh) {
+            Write-Info "Installing PowerShell 7 via winget..."
+            winget install --id Microsoft.PowerShell -e --source winget --accept-package-agreements --accept-source-agreements
+        }
+    }
+
+    # 2. Windows Terminal (REQUIRED)
+    $wtCmd = Get-Command wt -ErrorAction SilentlyContinue
+    $wtPkg = Get-AppxPackage Microsoft.WindowsTerminal* -ErrorAction SilentlyContinue
+    $wtSettings = Get-WTSettingsPath
+
+    if ($wtCmd -or $wtPkg -or $wtSettings) {
+        Write-Ok "Windows Terminal is installed (Required host)"
+    } else {
+        Write-Err "Windows Terminal is REQUIRED (legacy conhost/cmd cannot render glyphs, true-color ANSI or SVG icons)."
+        $allPassed = $false
+        $doInstallWT = $AutoInstall
+        if (-not $doInstallWT -and -not $Quiet) {
+            $resp = Read-Host "  Install Windows Terminal now via winget? [Y/n]"
+            $doInstallWT = ($resp -notmatch '^[nN]$')
+        }
+        if ($doInstallWT) {
+            Write-Info "Installing Windows Terminal via winget..."
+            winget install --id Microsoft.WindowsTerminal -e --source winget --accept-package-agreements --accept-source-agreements
+            if ($LASTEXITCODE -eq 0) {
+                Write-Ok "Windows Terminal installed successfully"
+                $allPassed = $true
+            } else {
+                Write-Err "Failed to install Windows Terminal (code $LASTEXITCODE)"
+            }
+        }
+    }
+
+    # 3. Font (Optional Nerd Font, default Cascadia Mono)
+    $userFonts = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"
+    $winFonts  = "$env:WINDIR\Fonts"
+    $hasNerdFont = Get-ChildItem -Path $userFonts, $winFonts -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match "Nerd|Caskaydia" } | Select-Object -First 1
+
+    if ($hasNerdFont) {
+        Write-Ok "Nerd Font detected: $($hasNerdFont.Name) (Full icon & glyph support)"
+    } else {
+        Write-Ok "System font available: Cascadia Mono (Nerd Font is optional for extra icons)"
+    }
+
+    # 4. Windows Package Manager (winget)
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        Write-Ok "Windows Package Manager (winget) is available"
+    } else {
+        Write-Err "winget not found in PATH (automated tool installation may fail)."
+        $allPassed = $false
+    }
+
+    Write-Host ""
+    return $allPassed
+}
+
+function Get-AvailableNerdFonts {
+    $keys = @('HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts', 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts')
+    $fonts = foreach ($k in $keys) {
+        if (Test-Path $k) {
+            $prop = Get-ItemProperty $k -ErrorAction SilentlyContinue
+            if ($prop) {
+                $prop | Get-Member -MemberType NoteProperty |
+                    Where-Object { $_.Name -match 'Nerd|Cascadia|Caskaydia' -and $_.Name -notmatch 'Bold|Italic' } |
+                    ForEach-Object {
+                        $clean = $_.Name -replace '\s*\((?:TrueType|OpenType)\)\s*$', ''
+                        $clean = $clean -replace '\s+(?:Regular|ExtraLight|Light|SemiLight|SemiBold|Medium)$', ''
+                        $clean
+                    }
+            }
+        }
+    }
+    return ($fonts | Where-Object { $_ } | Sort-Object -Unique)
+}
+
+function Set-TerminalFont {
+    [CmdletBinding()]
+    param(
+        [string]$FontName
+    )
+
+    $wtSettings = Get-WTSettingsPath
+    if (-not $wtSettings -or -not (Test-Path $wtSettings)) {
+        Write-Err "Windows Terminal settings.json not found."
+        return $false
+    }
+
+    if (-not $FontName) {
+        $avail = Get-AvailableNerdFonts
+        Write-Host ""
+        Write-Host "${cyn}${bold}  +----------------------------------------------+${rst}"
+        Write-Host "${cyn}${bold}  |            Select Terminal Font              |${rst}"
+        Write-Host "${cyn}${bold}  +----------------------------------------------+${rst}"
+        Write-Host ""
+
+        $fontChoices = [System.Collections.Generic.List[string]]::new()
+        foreach ($f in $avail) {
+            $fontChoices.Add($f)
+        }
+        if (-not ($fontChoices -contains "Cascadia Mono")) {
+            $fontChoices.Add("Cascadia Mono (System Default)")
+        }
+        if (-not ($fontChoices -contains "Consolas")) {
+            $fontChoices.Add("Consolas (Built-in Windows)")
+        }
+
+        Write-Host "  Available Fonts:"
+        for ($i = 0; $i -lt $fontChoices.Count; $i++) {
+            Write-Host "    ${bold}[$($i+1)]${rst} $($fontChoices[$i])"
+        }
+        Write-Host "    ${bold}[C]${rst} Enter custom font name"
+        Write-Host "    ${bold}[I]${rst} Install new Nerd Font (via oh-my-posh)"
+        Write-Host ""
+        $choice = Read-Host "  Choose option [1-$($fontChoices.Count), C, I] (Default: 1)"
+        if (-not $choice) { $choice = '1' }
+
+        if ($choice -match '^[0-9]+$' -and [int]$choice -ge 1 -and [int]$choice -le $fontChoices.Count) {
+            $selected = $fontChoices[[int]$choice - 1]
+            $FontName = ($selected -replace '\s*\(.*?\)', '').Trim()
+        } elseif ($choice -match '^[iI]$') {
+            Write-Host ""
+            Write-Host "  Popular options: CascadiaCode, JetBrainsMono, FiraCode, Meslo, Hack"
+            $newFont = Read-Host "  Enter font name to install (default: CascadiaCode)"
+            if (-not $newFont) { $newFont = "CascadiaCode" }
+            $omp = Get-Command oh-my-posh -ErrorAction SilentlyContinue
+            if ($omp) {
+                & oh-my-posh font install $newFont --headless
+                $FontName = "$newFont Nerd Font"
+            } else {
+                Write-Err "oh-my-posh is required to install fonts."
+            }
+        } elseif ($choice -match '^[cC]$') {
+            $FontName = Read-Host "  Enter font face name (e.g. Cascadia Mono, 0xProto Nerd Font)"
+        }
+    }
+
+    if (-not $FontName) {
+        Write-Info "No font selected. Keeping current configuration."
+        return $false
+    }
+
+    $json = Get-Content $wtSettings -Raw | ConvertFrom-Json
+    $wtProfile = $json.profiles.list | Where-Object { $_.name -eq "Warph Terminal" }
+    if (-not $wtProfile) {
+        Write-Info "Warph Terminal profile not found. Initializing profile in Windows Terminal with font '$FontName'..."
+        Invoke-InstallAction -selectedMode '1' -noOptional $true -customFont $FontName
+        return $true
+    }
+
+    if (-not $wtProfile.font) {
+        $wtProfile | Add-Member -MemberType NoteProperty -Name "font" -Value ([PSCustomObject]@{ face = $FontName }) -Force
+    } else {
+        $wtProfile.font.face = $FontName
+    }
+
+    $json | ConvertTo-Json -Depth 20 | Set-Content $wtSettings -Encoding UTF8
+    Write-Ok "Windows Terminal profile 'Warph Terminal' updated with font: ${cyn}$FontName${rst}"
+
+    # Verify and grant font permissions
+    $userFonts = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"
+    if (Test-Path -LiteralPath $userFonts) {
+        icacls $userFonts /grant "*S-1-15-2-1:(OI)(CI)RX" /t | Out-Null
+    }
+
+    return $true
 }
 
 function Install-WingetPkg ($id, $name) {
@@ -107,13 +323,20 @@ function Install-PSModule ($modName) {
     Write-Ok "$modName installed"
 }
 
-function Invoke-InstallAction ($selectedMode, $noOptional) {
+function Invoke-InstallAction ($selectedMode, $noOptional, $customFont) {
     $TOTAL = 4
     Write-Host ""
-    Write-Host "${cyn}${bold}  ╔══════════════════════════════════════╗${rst}"
-    Write-Host "${cyn}${bold}  ║     Warph Terminal — Installation     ║${rst}"
-    Write-Host "${cyn}${bold}  ╚══════════════════════════════════════╝${rst}"
+    Write-Host "${cyn}${bold}  +--------------------------------------+"
+    Write-Host "${cyn}${bold}  |     Warph Terminal - Installation    |"
+    Write-Host "${cyn}${bold}  +--------------------------------------+"
     Write-Host "  Install Target: ${dim}$installDir${rst}"
+
+    # Verify Prerequisites before proceeding
+    $prereqsOk = Test-Prerequisites -AutoInstall:$noOptional
+    if (-not $prereqsOk -and -not $Quiet) {
+        Write-Host "  ${ylw}Continuing installation. You can install missing prerequisites anytime with Option [2].${rst}"
+        Write-Host ""
+    }
 
     # Step 1: Mode Selection
     if (-not $selectedMode) {
@@ -203,16 +426,36 @@ function Invoke-InstallAction ($selectedMode, $noOptional) {
             $profileGuid = "{$(([System.Guid]::NewGuid()).ToString())}"
             $iconPath    = if (Test-Path -LiteralPath $installedLogo) { $installedLogo } else { "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png" }
 
+            # Resolve font for profile
+            $targetFont = $customFont
+            if (-not $targetFont) {
+                if ($existing -and $existing.font -and $existing.font.face) {
+                    $targetFont = $existing.font.face
+                    Write-Ok "Preserving configured profile font: ${cyn}$targetFont${rst}"
+                } else {
+                    $availableFonts = Get-AvailableNerdFonts
+                    if ($availableFonts.Count -gt 0) {
+                        $targetFont = $availableFonts[0]
+                    } else {
+                        $targetFont = "Cascadia Mono"
+                    }
+                }
+            }
+
             $existing = $json.profiles.list | Where-Object { $_.name -eq $profileName }
             if ($existing) {
                 $existing.commandline = $cmdline
                 if (Test-Path -LiteralPath $installedLogo) {
                     $existing.icon = $installedLogo
                 }
-                if ($existing.PSObject.Properties['font']) {
-                    $existing.PSObject.Properties.Remove('font')
+                if ($targetFont) {
+                    if (-not $existing.font) {
+                        $existing | Add-Member -MemberType NoteProperty -Name "font" -Value ([PSCustomObject]@{ face = $targetFont }) -Force
+                    } else {
+                        $existing.font.face = $targetFont
+                    }
                 }
-                Write-Ok "Profile '$profileName' updated in Windows Terminal"
+                Write-Ok "Profile '$profileName' updated in Windows Terminal (Font: ${cyn}$targetFont${rst})"
                 $targetGuid = $existing.guid
             } else {
                 $newProfile = [ordered]@{
@@ -220,11 +463,14 @@ function Invoke-InstallAction ($selectedMode, $noOptional) {
                     guid             = $profileGuid
                     commandline      = $cmdline
                     icon             = $iconPath
+                    font             = [ordered]@{
+                        face = $targetFont
+                    }
                     startingDirectory= "%USERPROFILE%"
                     hidden           = $false
                 }
                 $json.profiles.list += [PSCustomObject]$newProfile
-                Write-Ok "Profile '$profileName' added to Windows Terminal"
+                Write-Ok "Profile '$profileName' added to Windows Terminal (Font: ${cyn}$targetFont${rst})"
                 $targetGuid = $profileGuid
             }
 
@@ -322,15 +568,31 @@ function Invoke-InstallAction ($selectedMode, $noOptional) {
         }
     }
 
-    # font
-    Write-Info "Installing CaskaydiaCove Nerd Font..."
-    $ompCmd = Get-Command oh-my-posh -ErrorAction SilentlyContinue
-    if ($ompCmd) {
-        try {
-            & oh-my-posh font install CascadiaCode --headless
-            Write-Ok "CaskaydiaCove Nerd Font installed"
-        } catch {
-            Write-Err "Failed to install font: $_"
+    # font (OPTIONAL)
+    $hasNerdFont = Get-ChildItem -Path "$env:LOCALAPPDATA\Microsoft\Windows\Fonts", "$env:WINDIR\Fonts" -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match "Nerd|Caskaydia" } | Select-Object -First 1
+
+    if ($hasNerdFont) {
+        Write-Skip "Nerd Font already detected: $($hasNerdFont.Name)"
+    } else {
+        $doInstallFont = $false
+        if (-not $noOptional -and -not $Quiet) {
+            $resp = Read-Host "  Install optional CaskaydiaCove Nerd Font (for extra glyphs)? [y/N]"
+            $doInstallFont = ($resp -match '^[yYsS]$')
+        }
+        if ($doInstallFont) {
+            Write-Info "Installing CaskaydiaCove Nerd Font..."
+            $ompCmd = Get-Command oh-my-posh -ErrorAction SilentlyContinue
+            if ($ompCmd) {
+                try {
+                    & oh-my-posh font install CascadiaCode --headless
+                    Write-Ok "CaskaydiaCove Nerd Font installed"
+                } catch {
+                    Write-Err "Failed to install font: $_"
+                }
+            }
+        } else {
+            Write-Ok "Using default system font (Cascadia Mono). Font install skipped."
         }
     }
 
@@ -444,9 +706,8 @@ function Invoke-RepairAction {
                     $needsSave = $true
                 }
             }
-            if ($wtProfile.PSObject.Properties['font']) {
-                $wtProfile.PSObject.Properties.Remove('font')
-                $needsSave = $true
+            if ($wtProfile.font -and $wtProfile.font.face) {
+                Write-Ok "Preserved profile font: $($wtProfile.font.face)"
             }
             if ($needsSave) {
                 $json | ConvertTo-Json -Depth 20 | Set-Content $wtSettings -Encoding UTF8
@@ -607,13 +868,19 @@ function Invoke-AuditAction {
 # Dispatcher
 # ─────────────────────────────────────────────────────────────
 if ($Install) {
-    Invoke-InstallAction -selectedMode $Mode -noOptional $SkipOptional
+    Invoke-InstallAction -selectedMode $Mode -noOptional $SkipOptional -customFont $Font
+} elseif ($SetFont) {
+    Set-TerminalFont -FontName $Font
 } elseif ($Repair) {
     Invoke-RepairAction
 } elseif ($Uninstall) {
     Invoke-UninstallAction -isForce $Force
 } elseif ($Audit) {
     Invoke-AuditAction
+} elseif ($CheckPrereqs) {
+    Test-Prerequisites
+} elseif ($InstallPrereqs) {
+    Test-Prerequisites -AutoInstall
 } else {
     # Interactive Menu
     Write-Host ""
@@ -623,22 +890,26 @@ if ($Install) {
     Write-Host "${cyn}${bold}  +--------------------------------------+"
     Write-Host ""
     Write-Host "  ${bold}[1]${rst} ${grn}Install / Update${rst}       ${dim}(Setup theme, profiles, font & tools)${rst}"
-    Write-Host "  ${bold}[2]${rst} ${cyn}Repair Paths${rst}           ${dim}(Fix paths after moving the repository folder)${rst}"
-    Write-Host "  ${bold}[3]${rst} ${red}Uninstall${rst}              ${dim}(Cleanly remove WT profile & restore `$PROFILE)${rst}"
-    Write-Host "  ${bold}[4]${rst} ${ylw}Audit & Benchmark${rst}      ${dim}(Verify AST, 3-way sync & load latency)${rst}"
-    Write-Host "  ${bold}[5]${rst} Exit"
+    Write-Host "  ${bold}[2]${rst} ${cyn}Check Prerequisites${rst}    ${dim}(Verify & install Windows Terminal, fonts, pwsh)${rst}"
+    Write-Host "  ${bold}[3]${rst} ${cyn}Customize Font${rst}         ${dim}(Choose or switch Windows Terminal Nerd Font)${rst}"
+    Write-Host "  ${bold}[4]${rst} ${cyn}Repair Paths${rst}           ${dim}(Fix paths after moving the repository folder)${rst}"
+    Write-Host "  ${bold}[5]${rst} ${red}Uninstall${rst}              ${dim}(Cleanly remove WT profile & restore `$PROFILE)${rst}"
+    Write-Host "  ${bold}[6]${rst} ${ylw}Audit & Benchmark${rst}      ${dim}(Verify AST, 3-way sync & load latency)${rst}"
+    Write-Host "  ${bold}[7]${rst} Exit"
     Write-Host ""
 
     $choice = ''
-    while ($choice -notin '1','2','3','4','5') {
-        $choice = Read-Host "  Select an option [1-5]"
+    while ($choice -notin '1','2','3','4','5','6','7') {
+        $choice = Read-Host "  Select an option [1-7]"
     }
 
     switch ($choice) {
-        '1' { Invoke-InstallAction -selectedMode $null -noOptional $false }
-        '2' { Invoke-RepairAction }
-        '3' { Invoke-UninstallAction -isForce $false }
-        '4' { Invoke-AuditAction }
-        '5' { Write-Host "  Exiting."; exit 0 }
+        '1' { Invoke-InstallAction -selectedMode $null -noOptional $false -customFont $null }
+        '2' { Test-Prerequisites }
+        '3' { Set-TerminalFont }
+        '4' { Invoke-RepairAction }
+        '5' { Invoke-UninstallAction -isForce $false }
+        '6' { Invoke-AuditAction }
+        '7' { Write-Host "  Exiting."; exit 0 }
     }
 }

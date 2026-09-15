@@ -28,10 +28,33 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
     Write-Host "${red}${bold}[ERROR] Warph Terminal requires PowerShell 7 or higher.${rst}"
     Write-Host "You are currently running PowerShell $($PSVersionTable.PSVersion)."
     Write-Host ""
-    Write-Host "Install PowerShell 7 via winget:"
-    Write-Host "  ${cyn}winget install Microsoft.PowerShell${rst}"
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        $doInstallPwsh = Read-Host "  Install PowerShell 7 now via winget? [Y/n]"
+        if ($doInstallPwsh -notmatch '^[nN]$') {
+            winget install --id Microsoft.PowerShell -e --source winget --accept-package-agreements --accept-source-agreements
+            Write-Host "${grn}Please relaunch this script inside PowerShell 7 (pwsh.exe).${rst}"
+            return
+        }
+    } else {
+        Write-Host "Install PowerShell 7 via winget:"
+        Write-Host "  ${cyn}winget install Microsoft.PowerShell${rst}"
+    }
     Write-Host ""
     return
+}
+
+# 2. Windows Terminal verification (REQUIRED)
+$hasWT = (Get-Command wt -ErrorAction SilentlyContinue) -or (Get-AppxPackage Microsoft.WindowsTerminal* -ErrorAction SilentlyContinue)
+if (-not $hasWT) {
+    Write-Host ""
+    Write-Host "${ylw}${bold}[!] Windows Terminal is REQUIRED for Warph Terminal.${rst}"
+    Write-Host "  (Legacy console host cannot render glyphs, true-color ANSI or SVG icons)"
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        $doInstallWT = Read-Host "  Install Windows Terminal now via winget? [Y/n]"
+        if ($doInstallWT -notmatch '^[nN]$') {
+            winget install --id Microsoft.WindowsTerminal -e --source winget --accept-package-agreements --accept-source-agreements
+        }
+    }
 }
 
 Write-Host ""
