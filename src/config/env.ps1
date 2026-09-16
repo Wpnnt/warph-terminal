@@ -1,5 +1,9 @@
 # env.ps1 — PATH resolution and environment initialization
 
+# Force UTF-8 console output and pipeline encoding for clean glyph and icon rendering
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 # Rust CLI tools — add winget package dirs to PATH
 $_wingetBase = "$env:LOCALAPPDATA\Microsoft\WinGet\Packages"
 if (Test-Path $_wingetBase) {

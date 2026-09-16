@@ -1,40 +1,60 @@
-# help.ps1 - Categorized help menu with clean ASCII and ANSI colors
+# help.ps1 - Categorized help menu with clean Nerd Font icons and ANSI colors
 
 function Show-Help {
-    $title = $PSStyle.Foreground.BrightMagenta
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0)]
+        [string]$Topic
+    )
+
+    $title   = $PSStyle.Foreground.BrightMagenta
     $section = $PSStyle.Foreground.BrightBlue
     $command = $PSStyle.Foreground.BrightGreen
-    $desc = $PSStyle.Foreground.BrightWhite
-    $accent = $PSStyle.Foreground.BrightYellow
-    $dim = $PSStyle.Foreground.BrightBlack
-    $reset = $PSStyle.Reset
+    $desc    = $PSStyle.Foreground.BrightWhite
+    $accent  = $PSStyle.Foreground.BrightYellow
+    $dim     = $PSStyle.Foreground.BrightBlack
+    $reset   = $PSStyle.Reset
+
+    $icWsl   = [char]0xf17c  # 
+    $icApps  = [char]0xf40e  # 
+    $icNet   = [char]0xf0ac  # 
+    $icApi   = [char]0xf1e6  # 
+    $icClip  = [char]0xf0c5  # 
+    $icDev   = [char]0xf121  # 
+    $icDisk  = [char]0xf1f8  # 
+    $icYt    = [char]0xf16a  # 
+    $icMedia = [char]0xf008  # 
+    $icCli   = [char]0xf489  # 
+    $icSys   = [char]0xf013  # 
+    $icTerm  = [char]0xf489  # 
+    $sep     = "────────────────────────────────────────────────────"
 
     Write-Host @"
-${title}PowerShell Profile Help${reset}
-${dim}====================================================${reset}
+${title}${icTerm}  PowerShell Profile Help${reset}
+${dim}${sep}${reset}
 
-${section}WSL${reset}
-${dim}----------------------------------------------------${reset}
+${section}${icWsl}  WSL${reset}
+${dim}${sep}${reset}
   ${command}wls${reset}                ${accent}->${reset} ${desc}List installed WSL distros and their status${reset}
   ${command}woff${reset}               ${accent}->${reset} ${desc}Shut down all WSL distros at once (wsl --shutdown)${reset}
   ${command}wk <distro>${reset}        ${accent}->${reset} ${desc}Terminate a specific distro (ex: wk Ubuntu)${reset}
   ${command}wsh <distro>${reset}       ${accent}->${reset} ${desc}Open the shell of a distro (ex: wsh Ubuntu)${reset}
 
-${section}Apps${reset}
-${dim}----------------------------------------------------${reset}
+${section}${icApps}  Apps${reset}
+${dim}${sep}${reset}
   ${command}ag [path]${reset}          ${accent}->${reset} ${desc}Open Antigravity IDE (optionally in a folder)${reset}
   ${command}ex [path]${reset}          ${accent}->${reset} ${desc}Open Windows Explorer in the current or given folder${reset}
   ${command}vlc <file>${reset}         ${accent}->${reset} ${desc}Open file/URL in VLC media player${reset}
   ${command}colorpick${reset}          ${accent}->${reset} ${desc}Open PowerToys Color Picker to copy a color${reset}
 
-${section}Network${reset}
-${dim}----------------------------------------------------${reset}
+${section}${icNet}  Network${reset}
+${dim}${sep}${reset}
   ${command}myip${reset}               ${accent}->${reset} ${desc}Show public IP + location (copies IP to clipboard)${reset}
   ${command}flushdns${reset}           ${accent}->${reset} ${desc}Clear the Windows DNS cache${reset}
   ${command}testport <host> <port>${reset} ${accent}->${reset} ${desc}Check if a port is reachable on a host${reset}
 
-${section}cURL / APIs${reset}
-${dim}----------------------------------------------------${reset}
+${section}${icApi}  cURL / APIs${reset}
+${dim}${sep}${reset}
   ${command}curltime <url>${reset}     ${accent}->${reset} ${desc}Measure DNS/TLS/TTFB/total time of a request${reset}
   ${command}curlhead <url>${reset}     ${accent}->${reset} ${desc}Show HTTP response headers${reset}
   ${command}curlssl <host>${reset}     ${accent}->${reset} ${desc}Inspect the SSL certificate of a domain${reset}
@@ -48,26 +68,25 @@ ${dim}----------------------------------------------------${reset}
   ${command}cdl <url>${reset}          ${accent}->${reset} ${desc}Download file with progress bar and resume${reset}
   ${command}cdlr <url>${reset}         ${accent}->${reset} ${desc}Download file with resume and up to 3 retries${reset}
 
-${section}Clipboard / Text${reset}
-${dim}----------------------------------------------------${reset}
+${section}${icClip}  Clipboard / Text${reset}
+${dim}${sep}${reset}
   ${command}<cmd> | cb${reset}         ${accent}->${reset} ${desc}Copy a command's output to the clipboard${reset}
   ${command}b64 <text>${reset}         ${accent}->${reset} ${desc}Encode text as Base64${reset}
   ${command}b64d <text>${reset}        ${accent}->${reset} ${desc}Decode Base64 back to text${reset}
   ${command}uuid${reset}              ${accent}->${reset} ${desc}Generate a random UUID v4${reset}
   ${command}genpass [len]${reset}      ${accent}->${reset} ${desc}Generate random password (default 20 chars) and copy${reset}
 
-${section}Dev Workflow${reset}
-${dim}----------------------------------------------------${reset}
+${section}${icDev}  Dev Workflow${reset}
+${dim}${sep}${reset}
   ${command}nuke${reset}               ${accent}->${reset} ${desc}Delete node_modules/.next/dist and reinstall deps${reset}
   ${command}killport <port>${reset}    ${accent}->${reset} ${desc}Kill the process using a port${reset}
 
-
-${section}Disk / Cleanup${reset}
-${dim}----------------------------------------------------${reset}
+${section}${icDisk}  Disk / Cleanup${reset}
+${dim}${sep}${reset}
   ${command}cleantemp${reset}          ${accent}->${reset} ${desc}Clear the %TEMP% folder and show how much was freed${reset}
 
-${section}yt-dlp${reset}
-${dim}----------------------------------------------------${reset}
+${section}${icYt}  yt-dlp${reset}
+${dim}${sep}${reset}
   ${command}yti [url]${reset}          ${accent}->${reset} ${desc}Interactive TUI downloader (auto-reads clipboard)${reset}
   ${command}yt [url]${reset}           ${accent}->${reset} ${desc}best quality video (or opens interactive TUI)${reset}
   ${command}yta <url>${reset}           ${accent}->${reset} ${desc}MP3 audio -> current directory${reset}
@@ -78,8 +97,8 @@ ${dim}----------------------------------------------------${reset}
   ${command}vyta <url> -Type flac${reset} ${accent}->${reset} ${desc}FLAC -> ~/Music${reset}
   ${command}ytls <url>${reset}          ${accent}->${reset} ${desc}List the available formats${reset}
 
-${section}FFmpeg${reset}
-${dim}----------------------------------------------------${reset}
+${section}${icMedia}  FFmpeg${reset}
+${dim}${sep}${reset}
   ${command}tomp4 <file>${reset}       ${accent}->${reset} ${desc}Convert to MP4 (H.264 + AAC)${reset}
   ${command}tomp3 <file>${reset}       ${accent}->${reset} ${desc}Extract/convert audio to MP3${reset}
   ${command}towav <file>${reset}       ${accent}->${reset} ${desc}Convert to WAV (PCM 16-bit)${reset}
@@ -87,8 +106,8 @@ ${dim}----------------------------------------------------${reset}
   ${command}togif <f> [fps] [w]${reset} ${accent}->${reset} ${desc}Convert to GIF (default 15fps, 480px)${reset}
   ${command}towebm <file>${reset}      ${accent}->${reset} ${desc}Convert to WebM (VP9 + Opus)${reset}
 
-${section}Modern CLI Tools${reset}
-${dim}----------------------------------------------------${reset}
+${section}${icCli}  Modern CLI Tools${reset}
+${dim}${sep}${reset}
   ${command}la${reset}                 ${accent}->${reset} ${desc}eza: list files with icons (includes hidden)${reset}
   ${command}ll${reset}                 ${accent}->${reset} ${desc}eza: detailed listing with git status${reset}
   ${command}ff <name>${reset}          ${accent}->${reset} ${desc}fd: fast file finder shortcut${reset}
@@ -104,8 +123,8 @@ ${dim}----------------------------------------------------${reset}
   ${command}xh <url>${reset}           ${accent}->${reset} ${desc}friendly HTTP client for APIs${reset}
   ${command}broot${reset}              ${accent}->${reset} ${desc}interactive directory tree navigation${reset}
 
-${section}System${reset}
-${dim}----------------------------------------------------${reset}
+${section}${icSys}  System${reset}
+${dim}${sep}${reset}
   ${command}touch <file>${reset}       ${accent}->${reset} ${desc}Create empty file or update timestamp${reset}
   ${command}mkcd <dir>${reset}         ${accent}->${reset} ${desc}Create a folder and enter it${reset}
   ${command}trash <path>${reset}       ${accent}->${reset} ${desc}Move to Recycle Bin (safe delete)${reset}
@@ -115,6 +134,9 @@ ${dim}----------------------------------------------------${reset}
   ${command}uptime${reset}             ${accent}->${reset} ${desc}Show how long the PC has been on${reset}
   ${command}winutil${reset}            ${accent}->${reset} ${desc}Run Chris Titus WinUtil (Windows tweaks)${reset}
 
-${dim}====================================================${reset}
+${dim}${sep}${reset}
 "@
 }
+
+Set-Alias -Name show -Value Show-Help -Description "Alias for Show-Help"
+

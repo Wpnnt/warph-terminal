@@ -75,7 +75,10 @@ $userHome         = [Environment]::GetFolderPath('UserProfile')
 $installDir       = Join-Path $userHome ".warph-terminal"
 $installedProfile = Join-Path $installDir "Microsoft.PowerShell_profile.ps1"
 $installedTheme   = Join-Path $installDir "warph.omp.json"
-$installedLogo    = Join-Path $installDir "assets\logo.svg"
+$installedLogo    = Join-Path $installDir "assets\logo.png"
+if (-not (Test-Path -LiteralPath $installedLogo)) {
+    $installedLogo = Join-Path $installDir "assets\logo.svg"
+}
 $profileDir       = Split-Path $PROFILE
 $themeDest        = Join-Path $profileDir "warph.omp.json"
 
@@ -617,8 +620,8 @@ function Invoke-InstallAction ($selectedMode, $noOptional, $customFont) {
     } else {
         $doInstallFont = $false
         if (-not $noOptional -and -not $Quiet) {
-            $resp = Read-Host "  Install optional CaskaydiaCove Nerd Font (for extra glyphs)? [y/N]"
-            $doInstallFont = ($resp -match '^[yYsS]$')
+            $resp = Read-Host "  Install recommended CaskaydiaCove Nerd Font (for glyphs & icons)? [Y/n]"
+            $doInstallFont = ($resp -notmatch '^[nN]$')
         }
         if ($doInstallFont) {
             Write-Info "Installing CaskaydiaCove Nerd Font..."
@@ -627,6 +630,9 @@ function Invoke-InstallAction ($selectedMode, $noOptional, $customFont) {
                 try {
                     & oh-my-posh font install CascadiaCode --headless
                     Write-Ok "CaskaydiaCove Nerd Font installed"
+                    if ($doWT) {
+                        Set-TerminalFont -FontName "CaskaydiaCove NF"
+                    }
                 } catch {
                     Write-Err "Failed to install font: $_"
                 }
