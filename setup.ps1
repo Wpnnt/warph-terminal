@@ -76,9 +76,6 @@ $installDir       = Join-Path $userHome ".warph-terminal"
 $installedProfile = Join-Path $installDir "Microsoft.PowerShell_profile.ps1"
 $installedTheme   = Join-Path $installDir "warph.omp.json"
 $installedLogo    = Join-Path $installDir "assets\logo.png"
-if (-not (Test-Path -LiteralPath $installedLogo)) {
-    $installedLogo = Join-Path $installDir "assets\logo.svg"
-}
 $profileDir       = Split-Path $PROFILE
 $themeDest        = Join-Path $profileDir "warph.omp.json"
 
