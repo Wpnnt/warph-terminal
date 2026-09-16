@@ -135,9 +135,6 @@ Run `.\scripts\install-rust-tools.ps1` to install modern CLI alternatives via `w
 | `touch <file>` | Create an empty file or update its timestamp |
 | `mkcd <dir>` | Create a directory and immediately enter it |
 | `trash <path>` | Move a file or folder to the Windows Recycle Bin |
-| `ff <glob>` | Fast search for files by name (`fd` or `Get-ChildItem`) |
-| `la` | List files including hidden items with icons (`eza`) |
-| `ll` | Detailed file list with Git status and permissions (`eza`) |
 | `cleantemp` | Remove temporary files in `%TEMP%` and report reclaimed space |
 
 ### Modern CLI Tools
@@ -146,10 +143,10 @@ Modern command-line utilities installed via `scripts/install-rust-tools.ps1` usi
 
 | Command | Tool | Description |
 |---|---|---|
-| `eza` (`la`, `ll`) | [eza](https://github.com/eza-community/eza) | Directory listing with icons and Git status |
+| `eza [args]` | [eza](https://github.com/eza-community/eza) | Directory listing with icons and Git status |
 | `bat <file>` | [bat](https://github.com/sharkdp/bat) | File viewer with syntax highlighting and line numbers |
 | `rg <pattern>` | [ripgrep](https://github.com/BurntSushi/ripgrep) | Ultra-fast recursive regex search |
-| `fd <pattern>` (`ff`) | [fd](https://github.com/sharkdp/fd) | Fast file finder |
+| `fd <pattern>` | [fd](https://github.com/sharkdp/fd) | Ultra-fast recursive file finder |
 | `dust` | [dust](https://github.com/bootandy/dust) | Interactive, visual disk space usage |
 | `btm` | [bottom](https://github.com/ClementTsang/bottom) | Graphical CPU, memory, and process monitor |
 | `procs` | [procs](https://github.com/dalance/procs) | Modern process tree and status viewer |
@@ -301,7 +298,6 @@ warph-terminal/
 │       ├── help.ps1                  # Show-Help documentation renderer
 │       ├── media.ps1                 # Media downloader and FFmpeg converters
 │       ├── network.ps1               # Network diagnostics and HTTP helpers
-│       ├── rust-tools.ps1            # CLI wrappers for Rust tools
 │       ├── system.ps1                # File and system management utilities
 │       └── wsl.ps1                   # WSL helpers
 ├── tests/

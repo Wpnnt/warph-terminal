@@ -108,9 +108,8 @@ ${dim}${sep}${reset}
 
 ${section}${icCli}  Modern CLI Tools${reset}
 ${dim}${sep}${reset}
-  ${command}la${reset}                 ${accent}->${reset} ${desc}eza: list files with icons (includes hidden)${reset}
-  ${command}ll${reset}                 ${accent}->${reset} ${desc}eza: detailed listing with git status${reset}
-  ${command}ff <name>${reset}          ${accent}->${reset} ${desc}fd: fast file finder shortcut${reset}
+  ${command}eza [args]${reset}         ${accent}->${reset} ${desc}modern ls: list files with icons, colors & git status${reset}
+  ${command}fd <pattern>${reset}       ${accent}->${reset} ${desc}fast, user-friendly alternative to find${reset}
   ${command}bat <file>${reset}         ${accent}->${reset} ${desc}syntax-highlighted file viewer with line numbers${reset}
   ${command}rg <pattern>${reset}       ${accent}->${reset} ${desc}ripgrep: ultra-fast text search${reset}
   ${command}dust${reset}               ${accent}->${reset} ${desc}interactive visual disk usage analyzer${reset}
