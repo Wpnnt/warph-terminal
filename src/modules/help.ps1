@@ -7,10 +7,10 @@ function Show-Help {
         [string]$Topic
     )
 
-    $title   = $PSStyle.Foreground.BrightMagenta
-    $section = $PSStyle.Foreground.BrightBlue
+    $title   = $PSStyle.Foreground.BrightWhite + $PSStyle.Bold
+    $section = $PSStyle.Foreground.BrightCyan
     $command = $PSStyle.Foreground.BrightGreen
-    $desc    = $PSStyle.Foreground.BrightWhite
+    $desc    = $PSStyle.Foreground.FromRgb(200, 200, 200)
     $accent  = $PSStyle.Foreground.BrightYellow
     $dim     = $PSStyle.Foreground.BrightBlack
     $reset   = $PSStyle.Reset

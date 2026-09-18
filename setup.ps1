@@ -55,6 +55,10 @@ $red  = $PSStyle.Foreground.BrightRed
 $dim  = $PSStyle.Foreground.BrightBlack
 $bold = $PSStyle.Bold
 $rst  = $PSStyle.Reset
+$w0   = $PSStyle.Foreground.FromRgb(255, 255, 255)
+$w1   = $PSStyle.Foreground.FromRgb(160, 190, 210)
+$w2   = $PSStyle.Foreground.FromRgb(80,  120, 150)
+$w3   = $PSStyle.Foreground.FromRgb(40,  75,  105)
 
 # Project Paths
 $repoRoot = if (Test-Path (Join-Path $PSScriptRoot "src\Microsoft.PowerShell_profile.ps1")) {
@@ -82,13 +86,29 @@ $themeDest        = Join-Path $profileDir "warph.omp.json"
 function Write-Step ($n, $total, $msg) {
     if (-not $Quiet) {
         Write-Host ""
-        Write-Host "${cyn}${bold}[$n/$total]${rst} ${bold}$msg${rst}"
+        Write-Host "  ${dim}$n/$total${rst} ${w0}$msg${rst}"
     }
 }
-function Write-Ok  ($msg) { if (-not $Quiet) { Write-Host "  ${grn}[OK]${rst} $msg" } }
-function Write-Skip($msg) { if (-not $Quiet) { Write-Host "  ${dim}[SKIP] $msg (skipped)${rst}" } }
-function Write-Err ($msg) { Write-Host "  ${red}[FAIL] $msg${rst}" }
-function Write-Info($msg) { if (-not $Quiet) { Write-Host "  ${ylw}  $msg${rst}" } }
+function Write-Ok  ($msg) { if (-not $Quiet) { Write-Host "  ${grn}ok${rst}  ${dim}$msg${rst}" } }
+function Write-Skip($msg) { if (-not $Quiet) { Write-Host "  ${dim}--  $msg${rst}" } }
+function Write-Err ($msg) { Write-Host "  ${red}err${rst} $msg" }
+function Write-Info($msg) { if (-not $Quiet) { Write-Host "  ${dim}..  $msg${rst}" } }
+
+function Show-WarphBanner {
+    if ($env:WARPH_NO_BANNER) { return }
+    $bannerFile = Join-Path $assetsSrc "banner.ansi"
+    if (Test-Path -LiteralPath $bannerFile) {
+        Write-Host ""
+        Get-Content -LiteralPath $bannerFile -Raw | Write-Host
+        Write-Host ""
+        Write-Host "                                 ${w0}${bold}WARPH TERMINAL${rst}"
+        Write-Host "                          ${dim}modular · fast · powershell${rst}"
+    } else {
+        Write-Host ""
+        Write-Host "                  ${w0}${bold}WARPH TERMINAL${rst}"
+        Write-Host "           ${dim}modular · fast · powershell${rst}"
+    }
+}
 
 function Get-WTSettingsPath {
     $paths = @(
@@ -116,9 +136,7 @@ function Test-Prerequisites {
     )
 
     Write-Host ""
-    Write-Host "${cyn}${bold}  +----------------------------------------------+${rst}"
-    Write-Host "${cyn}${bold}  |       Warph Terminal - Prerequisites Check   |${rst}"
-    Write-Host "${cyn}${bold}  +----------------------------------------------+${rst}"
+    Write-Host "  ${w0}${bold}prerequisites${rst}"
     Write-Host ""
 
     $allPassed = $true
@@ -225,9 +243,7 @@ function Set-TerminalFont {
     if (-not $FontName) {
         $avail = Get-AvailableNerdFonts
         Write-Host ""
-        Write-Host "${cyn}${bold}  +----------------------------------------------+${rst}"
-        Write-Host "${cyn}${bold}  |            Select Terminal Font              |${rst}"
-        Write-Host "${cyn}${bold}  +----------------------------------------------+${rst}"
+        Write-Host "  ${w0}${bold}fonts${rst}"
         Write-Host ""
 
         $fontChoices = [System.Collections.Generic.List[string]]::new()
@@ -241,14 +257,13 @@ function Set-TerminalFont {
             $fontChoices.Add("Consolas (Built-in Windows)")
         }
 
-        Write-Host "  Available Fonts:"
         for ($i = 0; $i -lt $fontChoices.Count; $i++) {
-            Write-Host "    ${bold}[$($i+1)]${rst} $($fontChoices[$i])"
+            Write-Host "  ${w0}$($i+1)${rst}  $($fontChoices[$i])"
         }
-        Write-Host "    ${bold}[C]${rst} Enter custom font name"
-        Write-Host "    ${bold}[I]${rst} Install new Nerd Font (via oh-my-posh)"
+        Write-Host "  ${w0}c${rst}  custom font"
+        Write-Host "  ${w0}i${rst}  install nerd font via oh-my-posh"
         Write-Host ""
-        $choice = Read-Host "  Choose option [1-$($fontChoices.Count), C, I] (Default: 1)"
+        $choice = Read-Host "  >"
         if (-not $choice) { $choice = '1' }
 
         if ($choice -match '^[0-9]+$' -and [int]$choice -ge 1 -and [int]$choice -le $fontChoices.Count) {
@@ -326,27 +341,25 @@ function Install-PSModule ($modName) {
 function Invoke-InstallAction ($selectedMode, $noOptional, $customFont) {
     $TOTAL = 4
     Write-Host ""
-    Write-Host "${cyn}${bold}  +--------------------------------------+"
-    Write-Host "${cyn}${bold}  |     Warph Terminal - Installation    |"
-    Write-Host "${cyn}${bold}  +--------------------------------------+"
-    Write-Host "  Install Target: ${dim}$installDir${rst}"
+    Write-Host "  ${w0}${bold}install${rst}  ${dim}$installDir${rst}"
 
     # Verify Prerequisites before proceeding
     $prereqsOk = Test-Prerequisites -AutoInstall:$noOptional
     if (-not $prereqsOk -and -not $Quiet) {
-        Write-Host "  ${ylw}Continuing installation. You can install missing prerequisites anytime with Option [2].${rst}"
+        Write-Host "  ${dim}prerequisites can be installed later with option 2${rst}"
         Write-Host ""
     }
 
     # Step 1: Mode Selection
     if (-not $selectedMode) {
-        Write-Step 1 $TOTAL "Installation mode"
-        Write-Host "  ${bold}[1]${rst} Profile in ${cyn}Windows Terminal${rst}  ${dim}(dedicated dropdown entry & optional default)${rst}"
-        Write-Host "  ${bold}[2]${rst} Loader in ${cyn}`$PROFILE${rst}          ${dim}(applies to all terminals: VS Code, Antigravity, pwsh)${rst}"
-        Write-Host "  ${bold}[3]${rst} Both ${grn}(Recommended)${rst}"
+        Write-Host ""
+        Write-Host "  ${w0}${bold}target${rst}"
+        Write-Host "  ${w0}1${rst}  windows terminal profile"
+        Write-Host "  ${w0}2${rst}  powershell profile (`$PROFILE)"
+        Write-Host "  ${w0}3${rst}  both ${dim}(recommended)${rst}"
         Write-Host ""
         while ($selectedMode -notin '1','2','3') {
-            $selectedMode = Read-Host "  Choose [1/2/3]"
+            $selectedMode = Read-Host "  >"
         }
     }
 
@@ -679,10 +692,7 @@ function Invoke-InstallAction ($selectedMode, $noOptional, $customFont) {
 
 function Invoke-RepairAction {
     Write-Host ""
-    Write-Host "${cyn}${bold}  +--------------------------------------+"
-    Write-Host "${cyn}${bold}  |       Warph Terminal - Repair        |"
-    Write-Host "${cyn}${bold}  +--------------------------------------+"
-    Write-Host "  Current Repo Path: ${dim}$repoRoot${rst}"
+    Write-Host "  ${w0}${bold}repair${rst}  ${dim}$repoRoot${rst}"
     Write-Host ""
 
     $repaired = $false
@@ -816,9 +826,7 @@ function Invoke-RepairAction {
 
 function Invoke-UninstallAction ($isForce) {
     Write-Host ""
-    Write-Host "${red}${bold}  +--------------------------------------+"
-    Write-Host "${red}${bold}  |     Warph Terminal - Uninstall       |"
-    Write-Host "${red}${bold}  +--------------------------------------+"
+    Write-Host "  ${red}${bold}uninstall${rst}"
     Write-Host ""
 
     if (-not $isForce) {
@@ -911,6 +919,7 @@ function Invoke-AuditAction {
 # Dispatcher
 # ─────────────────────────────────────────────────────────────
 if ($Install) {
+    if (-not $Quiet) { Show-WarphBanner }
     Invoke-InstallAction -selectedMode $Mode -noOptional $SkipOptional -customFont $Font
 } elseif ($SetFont) {
     Set-TerminalFont -FontName $Font
@@ -926,33 +935,29 @@ if ($Install) {
     Test-Prerequisites -AutoInstall
 } else {
     # Interactive Menu
+    Show-WarphBanner
     Write-Host ""
-    Write-Host "${cyn}${bold}  +--------------------------------------+"
-    Write-Host "${cyn}${bold}  |         Warph Terminal               |"
-    Write-Host "${cyn}${bold}  |      Interactive Setup & Manager     |"
-    Write-Host "${cyn}${bold}  +--------------------------------------+"
-    Write-Host ""
-    Write-Host "  ${bold}[1]${rst} ${grn}Install / Update${rst}       ${dim}(Setup theme, profiles, font & tools)${rst}"
-    Write-Host "  ${bold}[2]${rst} ${cyn}Check Prerequisites${rst}    ${dim}(Verify & install Windows Terminal, fonts, pwsh)${rst}"
-    Write-Host "  ${bold}[3]${rst} ${cyn}Customize Font${rst}         ${dim}(Choose or switch Windows Terminal Nerd Font)${rst}"
-    Write-Host "  ${bold}[4]${rst} ${cyn}Repair Paths${rst}           ${dim}(Fix paths after moving the repository folder)${rst}"
-    Write-Host "  ${bold}[5]${rst} ${red}Uninstall${rst}              ${dim}(Cleanly remove WT profile & restore `$PROFILE)${rst}"
-    Write-Host "  ${bold}[6]${rst} ${ylw}Audit & Benchmark${rst}      ${dim}(Verify AST, 3-way sync & load latency)${rst}"
-    Write-Host "  ${bold}[7]${rst} Exit"
+    Write-Host "  ${w0}1${rst}  install"
+    Write-Host "  ${w0}2${rst}  prerequisites"
+    Write-Host "  ${w0}3${rst}  fonts"
+    Write-Host "  ${w0}4${rst}  repair"
+    Write-Host "  ${w0}5${rst}  audit"
+    Write-Host "  ${w0}6${rst}  uninstall"
+    Write-Host "  ${dim}q  exit${rst}"
     Write-Host ""
 
     $choice = ''
-    while ($choice -notin '1','2','3','4','5','6','7') {
-        $choice = Read-Host "  Select an option [1-7]"
+    while ($choice -notin '1','2','3','4','5','6','7','q','Q') {
+        $choice = Read-Host "  >"
     }
 
-    switch ($choice) {
-        '1' { Invoke-InstallAction -selectedMode $null -noOptional $false -customFont $null }
-        '2' { Test-Prerequisites }
-        '3' { Set-TerminalFont }
-        '4' { Invoke-RepairAction }
-        '5' { Invoke-UninstallAction -isForce $false }
-        '6' { Invoke-AuditAction }
-        '7' { Write-Host "  Exiting."; exit 0 }
+    switch -Regex ($choice) {
+        '1'      { Invoke-InstallAction -selectedMode $null -noOptional $false -customFont $null }
+        '2'      { Test-Prerequisites }
+        '3'      { Set-TerminalFont }
+        '4'      { Invoke-RepairAction }
+        '5'      { Invoke-AuditAction }
+        '6'      { Invoke-UninstallAction -isForce $false }
+        '7|[qQ]' { Write-Host "  bye"; exit 0 }
     }
 }
