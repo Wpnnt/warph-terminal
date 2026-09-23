@@ -7,6 +7,7 @@
 
 [CmdletBinding()]
 param(
+    [string]$Branch = 'develop',
     [switch]$Install,
     [ValidateSet('1', '2', '3')]
     [string]$Mode = '3',
@@ -15,6 +16,10 @@ param(
     [switch]$TUI,
     [switch]$Quiet
 )
+
+if ($env:WARPH_BRANCH) {
+    $Branch = $env:WARPH_BRANCH
+}
 
 $grn  = $PSStyle.Foreground.BrightGreen
 $ylw  = $PSStyle.Foreground.BrightYellow
@@ -68,12 +73,14 @@ if (-not $hasWT) {
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
 
 $version = $null
-try {
-    $latestRel = Invoke-RestMethod -Uri "https://api.github.com/repos/Wpnnt/warph-terminal/releases/latest" -Headers @{'User-Agent'='Warph-Terminal-Web-Installer'} -TimeoutSec 3 -ErrorAction SilentlyContinue
-    if ($latestRel -and $latestRel.tag_name) {
-        $version = $latestRel.tag_name
-    }
-} catch { }
+if (-not $Branch -or $Branch -eq 'main') {
+    try {
+        $latestRel = Invoke-RestMethod -Uri "https://api.github.com/repos/Wpnnt/warph-terminal/releases/latest" -Headers @{'User-Agent'='Warph-Terminal-Web-Installer'} -TimeoutSec 3 -ErrorAction SilentlyContinue
+        if ($latestRel -and $latestRel.tag_name) {
+            $version = $latestRel.tag_name
+        }
+    } catch { }
+}
 
 function Get-TerminalWidth {
     try {
@@ -116,7 +123,7 @@ function Show-WarphBanner {
     }
 
     Write-Host ""
-    $vBadge = if ($version) { "  ${dim}$version${rst}" } else { "" }
+    $vBadge = if ($Branch -and $Branch -ne 'main') { "  ${cyn}[$Branch]${rst}" } elseif ($version) { "  ${dim}$version${rst}" } else { "" }
     Write-Host "  ${w0}${bold}WARPH TERMINAL${rst}$vBadge"
     Write-Host "  ${dim}modular · fast · powershell${rst}"
     Write-Host ""
@@ -139,14 +146,23 @@ if (-not $Quiet) {
 
 $tempZip     = Join-Path ([System.IO.Path]::GetTempPath()) "warph-terminal-latest-$([System.Guid]::NewGuid().ToString('N').Substring(0,8)).zip"
 $tempExtract = Join-Path ([System.IO.Path]::GetTempPath()) "warph-setup-$([System.Guid]::NewGuid().ToString('N').Substring(0,8))"
-$zipUrl      = if ($version) { "https://github.com/Wpnnt/warph-terminal/releases/download/$version/warph-terminal.zip" } else { "https://github.com/Wpnnt/warph-terminal/archive/refs/heads/main.zip" }
+$zipUrl      = if ($Branch -and $Branch -ne 'main') {
+    "https://github.com/Wpnnt/warph-terminal/archive/refs/heads/$Branch.zip"
+} elseif ($version) {
+    "https://github.com/Wpnnt/warph-terminal/releases/download/$version/warph-terminal.zip"
+} else {
+    "https://github.com/Wpnnt/warph-terminal/archive/refs/heads/main.zip"
+}
 
 try {
-    $relText = if ($version) { $version } else { "package" }
+    $relText = if ($Branch -and $Branch -ne 'main') { "$Branch (preview)" } elseif ($version) { $version } else { "package" }
     Write-Host "  ${dim}downloading $relText...${rst} " -NoNewline
     try {
         Invoke-WebRequest -Uri $zipUrl -OutFile $tempZip -UseBasicParsing
     } catch {
+        if ($Branch -and $Branch -ne 'main') {
+            throw "Failed to download branch archive: $_"
+        }
         $zipUrl = "https://github.com/Wpnnt/warph-terminal/archive/refs/heads/main.zip"
         Invoke-WebRequest -Uri $zipUrl -OutFile $tempZip -UseBasicParsing
     }

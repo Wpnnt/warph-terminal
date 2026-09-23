@@ -50,6 +50,12 @@ Run this one-liner in PowerShell 7 to download and launch the installer directly
 irm da.gd/warph | iex
 ```
 
+For the latest development preview (`develop` branch):
+
+```powershell
+irm da.gd/warphd | iex
+```
+
 ### Option 2: Release ZIP (One-Click)
 
 1. Download the latest `warph-terminal.zip` from [Releases](https://github.com/Wpnnt/warph-terminal/releases).
