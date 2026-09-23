@@ -39,7 +39,7 @@ Before opening a pull request, run the test suite to verify syntax and synchroni
 pwsh -NoProfile -File tests/run-tests.ps1
 ```
 
-All project scripts must pass AST parsing and the 3-Way Sync check. Additionally, automated Git pre-commit hooks via Husky are configured in `.husky/` to enforce clean syntax, zero unrendered emojis, and portable paths on every `git commit`.
+All project scripts must pass AST parsing and module synchronization checks. Additionally, Git pre-commit hooks via Husky run automated quality checks to enforce clean syntax, cross-terminal charset compatibility, and portable paths on every `git commit`.
 
 ### 5. Commit & Open a Pull Request
 
@@ -69,7 +69,7 @@ Then open a Pull Request against the `main` branch. GitHub Actions will automati
   - `[Environment]::GetFolderPath('UserProfile')` (user home)
   - `[Environment]::GetFolderPath('MyVideos')` (videos)
   - `$PSScriptRoot` (relative script directory)
-- **Terminal output**: Keep all `Write-Host` messages in English. Use `$PSStyle.Foreground.*` for coloring. Avoid raw emojis.
+- **Terminal output**: Keep all `Write-Host` messages in English. Use `$PSStyle.Foreground.*` for coloring. Avoid non-standard unicode glyphs or unrendered emojis (use clean ASCII or standard Nerd Font symbols).
 - **Clipboard feedback**: When a command copies text to the clipboard, show:
   ```powershell
   Write-Host "✓ Copied to clipboard" -ForegroundColor Green
