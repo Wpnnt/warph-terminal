@@ -45,6 +45,10 @@ param(
     [Parameter(ParameterSetName = 'SetFont')]
     [switch]$SetFont,
 
+    [switch]$NoTUI,
+
+    [switch]$TUI,
+
     [switch]$Quiet
 )
 
@@ -59,6 +63,10 @@ $w0   = $PSStyle.Foreground.FromRgb(255, 255, 255)
 $w1   = $PSStyle.Foreground.FromRgb(160, 190, 210)
 $w2   = $PSStyle.Foreground.FromRgb(80,  120, 150)
 $w3   = $PSStyle.Foreground.FromRgb(40,  75,  105)
+
+if ($env:NO_COLOR) {
+    $grn = $ylw = $cyn = $red = $dim = $bold = $rst = $w0 = $w1 = $w2 = $w3 = ""
+}
 
 # Project Paths
 $repoRoot = if (Test-Path (Join-Path $PSScriptRoot "src\Microsoft.PowerShell_profile.ps1")) {
@@ -94,19 +102,196 @@ function Write-Skip($msg) { if (-not $Quiet) { Write-Host "  ${dim}--  $msg${rst
 function Write-Err ($msg) { Write-Host "  ${red}err${rst} $msg" }
 function Write-Info($msg) { if (-not $Quiet) { Write-Host "  ${dim}..  $msg${rst}" } }
 
+function Get-TerminalWidth {
+    try {
+        $w = $Host.UI.RawUI.WindowSize.Width
+        if ($w -and $w -ge 40) { return $w }
+    } catch { }
+    return 120
+}
+
 function Show-WarphBanner {
     if ($env:WARPH_NO_BANNER) { return }
+    try {
+        if (-not [Console]::IsInputRedirected -and [Environment]::UserInteractive) {
+            Clear-Host
+        }
+    } catch { }
+    $w = Get-TerminalWidth
+    $logoPad = " " * [Math]::Max(0, [int](($w - 72) / 2))
+
     $bannerFile = Join-Path $assetsSrc "banner.ansi"
     if (Test-Path -LiteralPath $bannerFile) {
         Write-Host ""
-        Get-Content -LiteralPath $bannerFile -Raw | Write-Host
+        $lines = Get-Content -LiteralPath $bannerFile
+        foreach ($l in $lines) {
+            if ($l.Trim().Length -gt 0) {
+                Write-Host "$logoPad$l"
+            } else {
+                Write-Host ""
+            }
+        }
+    }
+
+    Write-Host ""
+    Write-Host "  ${w0}${bold}WARPH TERMINAL${rst}"
+    Write-Host "  ${dim}modular · fast · powershell${rst}"
+    Write-Host ""
+}
+
+function Select-MenuOption {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Options,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$Values,
+
+        [string]$Padding = "  ",
+
+        [string]$Title = $null,
+
+        [switch]$Classic
+    )
+
+    $canTUI = (-not $Classic) -and (-not $NoTUI) -and (-not $env:WARPH_NO_TUI)
+    if ($canTUI) {
+        try {
+            if ([Console]::IsInputRedirected) { $canTUI = $false }
+            if (-not [Environment]::UserInteractive) { $canTUI = $false }
+            if ($env:CI -or $env:CONTINUOUS_INTEGRATION -or $env:TF_BUILD -or $env:GITHUB_ACTIONS) { $canTUI = $false }
+            if ($env:TERM -eq 'dumb') { $canTUI = $false }
+        } catch {
+            $canTUI = $false
+        }
+    }
+
+    if (-not $canTUI) {
+        # ──────── Classic CLI Mode (Read-Host) ────────
+        if ($Title) { Write-Host "${Padding}${Title}" }
+        for ($i = 0; $i -lt $Options.Count; $i++) {
+            $val = $Values[$i]
+            $label = $Options[$i]
+            if ($val -in @('q', 'Q', 'b', 'B')) {
+                Write-Host "${Padding}${dim}$val) $label${rst}"
+            } else {
+                Write-Host "${Padding}${w0}$val)${rst} $label"
+            }
+        }
         Write-Host ""
-        Write-Host "                                 ${w0}${bold}WARPH TERMINAL${rst}"
-        Write-Host "                          ${dim}modular · fast · powershell${rst}"
-    } else {
-        Write-Host ""
-        Write-Host "                  ${w0}${bold}WARPH TERMINAL${rst}"
-        Write-Host "           ${dim}modular · fast · powershell${rst}"
+        $choice = ''
+        $validChoices = $Values + ($Values | ForEach-Object { $_.ToUpper() })
+        while ($choice -notin $validChoices) {
+            $choice = Read-Host "${Padding}>"
+        }
+        return $choice.ToLower()
+    }
+
+    # ──────── Modern Interactive TUI Mode (Option B: Rustup Style) ────────
+    if ($Title) { Write-Host "${Padding}${Title}" }
+    $selectedIndex = 0
+    $count = $Options.Count
+    $navBack = if ('b' -in $Values) { "b/Esc" } else { "q/Esc" }
+    $navAction = if ('b' -in $Values) { "Back" } else { "Exit" }
+    $navHint = "[↑/↓/j/k] Navigate   [Enter] Select   [$navBack] $navAction"
+
+    # Initial Render
+    for ($i = 0; $i -lt $count; $i++) {
+        $val = $Values[$i]
+        $label = $Options[$i]
+        if ($i -eq $selectedIndex) {
+            Write-Host "${Padding}${cyn}${bold}> ${val}) ${w0}${label}${rst}"
+        } else {
+            if ($val -in @('q', 'Q', 'b', 'B')) {
+                Write-Host "${Padding}  ${dim}${val}) ${label}${rst}"
+            } else {
+                Write-Host "${Padding}  ${dim}${val})${rst} ${w1}${label}${rst}"
+            }
+        }
+    }
+    Write-Host ""
+    Write-Host "${Padding}${dim}$navHint${rst}"
+
+    $totalLines = $count + 2
+
+    try {
+        [Console]::CursorVisible = $false
+    } catch { }
+
+    try {
+        while ($true) {
+            $key = [Console]::ReadKey($true)
+            $needsRedraw = $false
+
+            # Clean SIGINT (Ctrl+C) handling
+            if ($key.Key -eq 'C' -and ($key.Modifiers -band [System.ConsoleModifiers]::Control)) {
+                try { [Console]::CursorVisible = $true } catch { }
+                Write-Host ""
+                exit 130
+            }
+
+            switch ($key.Key) {
+                'UpArrow' {
+                    $selectedIndex = if ($selectedIndex -le 0) { $count - 1 } else { $selectedIndex - 1 }
+                    $needsRedraw = $true
+                }
+                'DownArrow' {
+                    $selectedIndex = if ($selectedIndex -ge $count - 1) { 0 } else { $selectedIndex + 1 }
+                    $needsRedraw = $true
+                }
+                'Enter' {
+                    Write-Host ""
+                    return $Values[$selectedIndex].ToLower()
+                }
+                'Escape' {
+                    Write-Host ""
+                    if ('b' -in $Values) { return 'b' }
+                    return 'q'
+                }
+                default {
+                    $char = $key.KeyChar.ToString().ToLower()
+                    if ($char -eq 'k') {
+                        $selectedIndex = if ($selectedIndex -le 0) { $count - 1 } else { $selectedIndex - 1 }
+                        $needsRedraw = $true
+                    } elseif ($char -eq 'j') {
+                        $selectedIndex = if ($selectedIndex -ge $count - 1) { 0 } else { $selectedIndex + 1 }
+                        $needsRedraw = $true
+                    } elseif ($char -eq 'q' -and 'b' -in $Values -and 'q' -notin $Values) {
+                        Write-Host ""
+                        return 'b'
+                    } else {
+                        $matchIdx = [array]::IndexOf(($Values | ForEach-Object { $_.ToLower() }), $char)
+                        if ($matchIdx -ge 0) {
+                            Write-Host ""
+                            return $char
+                        }
+                    }
+                }
+            }
+
+            if ($needsRedraw) {
+                Write-Host "$([char]27)[${totalLines}A" -NoNewline
+                for ($i = 0; $i -lt $count; $i++) {
+                    $val = $Values[$i]
+                    $label = $Options[$i]
+                    if ($i -eq $selectedIndex) {
+                        Write-Host "${Padding}${cyn}${bold}> ${val}) ${w0}${label}${rst}$([char]27)[K"
+                    } else {
+                        if ($val -in @('q', 'Q', 'b', 'B')) {
+                            Write-Host "${Padding}  ${dim}${val}) ${label}${rst}$([char]27)[K"
+                        } else {
+                            Write-Host "${Padding}  ${dim}${val})${rst} ${w1}${label}${rst}$([char]27)[K"
+                        }
+                    }
+                }
+                Write-Host "$([char]27)[K"
+                Write-Host "${Padding}${dim}$navHint${rst}$([char]27)[K"
+            }
+        }
+    } finally {
+        try {
+            [Console]::CursorVisible = $true
+        } catch { }
     }
 }
 
@@ -257,14 +442,25 @@ function Set-TerminalFont {
             $fontChoices.Add("Consolas (Built-in Windows)")
         }
 
+        $fOptions = [System.Collections.Generic.List[string]]::new()
+        $fValues  = [System.Collections.Generic.List[string]]::new()
         for ($i = 0; $i -lt $fontChoices.Count; $i++) {
-            Write-Host "  ${w0}$($i+1)${rst}  $($fontChoices[$i])"
+            $fValues.Add("$($i+1)")
+            $fOptions.Add($fontChoices[$i])
         }
-        Write-Host "  ${w0}c${rst}  custom font"
-        Write-Host "  ${w0}i${rst}  install nerd font via oh-my-posh"
+        $fValues.Add('c')
+        $fOptions.Add("Custom font")
+        $fValues.Add('i')
+        $fOptions.Add("Install nerd font via oh-my-posh")
+        $fValues.Add('b')
+        $fOptions.Add("Back to main menu")
+
         Write-Host ""
-        $choice = Read-Host "  >"
-        if (-not $choice) { $choice = '1' }
+        $choice = Select-MenuOption -Options $fOptions.ToArray() -Values $fValues.ToArray() -Padding "  " -Title "${w0}${bold}Available Fonts${rst}" -Classic:$NoTUI
+
+        if ($choice -in @('b', 'q')) {
+            return $false
+        }
 
         if ($choice -match '^[0-9]+$' -and [int]$choice -ge 1 -and [int]$choice -le $fontChoices.Count) {
             $selected = $fontChoices[[int]$choice - 1]
@@ -353,13 +549,17 @@ function Invoke-InstallAction ($selectedMode, $noOptional, $customFont) {
     # Step 1: Mode Selection
     if (-not $selectedMode) {
         Write-Host ""
-        Write-Host "  ${w0}${bold}target${rst}"
-        Write-Host "  ${w0}1${rst}  windows terminal profile"
-        Write-Host "  ${w0}2${rst}  powershell profile (`$PROFILE)"
-        Write-Host "  ${w0}3${rst}  both ${dim}(recommended)${rst}"
-        Write-Host ""
-        while ($selectedMode -notin '1','2','3') {
-            $selectedMode = Read-Host "  >"
+        $modeOptions = @(
+            "Windows Terminal profile",
+            "PowerShell profile (`$PROFILE)",
+            "Both (recommended)",
+            "Back to main menu"
+        )
+        $modeValues  = @('1', '2', '3', 'b')
+        $selectedMode = Select-MenuOption -Options $modeOptions -Values $modeValues -Padding "  " -Title "${w0}${bold}Target${rst}" -Classic:$NoTUI
+
+        if ($selectedMode -in @('b', 'q')) {
+            return $false
         }
     }
 
@@ -688,6 +888,7 @@ function Invoke-InstallAction ($selectedMode, $noOptional, $customFont) {
         Write-Host "  Restart the terminal or run: ${cyn}. `$PROFILE${rst}"
     }
     Write-Host ""
+    return $true
 }
 
 function Invoke-RepairAction {
@@ -838,7 +1039,7 @@ function Invoke-UninstallAction ($isForce) {
         $confirm = Read-Host "  Are you sure you want to uninstall Warph Terminal? [y/N]"
         if ($confirm -notmatch '^[yYsS]$') {
             Write-Host "  Uninstall cancelled." -ForegroundColor Yellow
-            return
+            return $false
         }
     }
 
@@ -898,6 +1099,7 @@ function Invoke-UninstallAction ($isForce) {
     Write-Host "${grn}${bold}  [OK] Warph Terminal has been cleanly uninstalled.${rst}"
     Write-Host "  ${dim}(Installed CLI packages like eza/bat/ffmpeg remain on your system.)${rst}"
     Write-Host ""
+    return $true
 }
 
 function Invoke-AuditAction {
@@ -934,30 +1136,69 @@ if ($Install) {
 } elseif ($InstallPrereqs) {
     Test-Prerequisites -AutoInstall
 } else {
-    # Interactive Menu
-    Show-WarphBanner
-    Write-Host ""
-    Write-Host "  ${w0}1${rst}  install"
-    Write-Host "  ${w0}2${rst}  prerequisites"
-    Write-Host "  ${w0}3${rst}  fonts"
-    Write-Host "  ${w0}4${rst}  repair"
-    Write-Host "  ${w0}5${rst}  audit"
-    Write-Host "  ${w0}6${rst}  uninstall"
-    Write-Host "  ${dim}q  exit${rst}"
-    Write-Host ""
+    # Interactive Menu Loop
+    while ($true) {
+        Show-WarphBanner
+        $menuOptions = @(
+            "Install (recommended)",
+            "Prerequisites",
+            "Fonts",
+            "Repair",
+            "Audit",
+            "Uninstall",
+            "Exit"
+        )
+        $menuValues  = @("1", "2", "3", "4", "5", "6", "q")
 
-    $choice = ''
-    while ($choice -notin '1','2','3','4','5','6','7','q','Q') {
-        $choice = Read-Host "  >"
-    }
+        $choice = Select-MenuOption -Options $menuOptions -Values $menuValues -Padding "  " -Classic:$NoTUI
 
-    switch -Regex ($choice) {
-        '1'      { Invoke-InstallAction -selectedMode $null -noOptional $false -customFont $null }
-        '2'      { Test-Prerequisites }
-        '3'      { Set-TerminalFont }
-        '4'      { Invoke-RepairAction }
-        '5'      { Invoke-AuditAction }
-        '6'      { Invoke-UninstallAction -isForce $false }
-        '7|[qQ]' { Write-Host "  bye"; exit 0 }
+        switch -Regex ($choice) {
+            '1' {
+                $installed = Invoke-InstallAction -selectedMode $null -noOptional $false -customFont $null
+                if ($installed) {
+                    Write-Host ""
+                    Write-Host "  ${dim}Press any key to return to menu...${rst}"
+                    try { [Console]::ReadKey($true) | Out-Null } catch { }
+                }
+            }
+            '2' {
+                $null = Test-Prerequisites
+                Write-Host ""
+                Write-Host "  ${dim}Press any key to return to menu...${rst}"
+                try { [Console]::ReadKey($true) | Out-Null } catch { }
+            }
+            '3' {
+                $fontSet = Set-TerminalFont
+                if ($fontSet) {
+                    Write-Host ""
+                    Write-Host "  ${dim}Press any key to return to menu...${rst}"
+                    try { [Console]::ReadKey($true) | Out-Null } catch { }
+                }
+            }
+            '4' {
+                Invoke-RepairAction
+                Write-Host ""
+                Write-Host "  ${dim}Press any key to return to menu...${rst}"
+                try { [Console]::ReadKey($true) | Out-Null } catch { }
+            }
+            '5' {
+                Invoke-AuditAction
+                Write-Host ""
+                Write-Host "  ${dim}Press any key to return to menu...${rst}"
+                try { [Console]::ReadKey($true) | Out-Null } catch { }
+            }
+            '6' {
+                $uninstalled = Invoke-UninstallAction -isForce $false
+                if ($uninstalled) {
+                    Write-Host ""
+                    Write-Host "  ${dim}Press any key to return to menu...${rst}"
+                    try { [Console]::ReadKey($true) | Out-Null } catch { }
+                }
+            }
+            '7|[qQ]' {
+                Write-Host "  bye"
+                exit 0
+            }
+        }
     }
 }
