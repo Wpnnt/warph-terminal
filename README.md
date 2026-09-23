@@ -53,7 +53,7 @@ irm da.gd/warph | iex
 For the latest development preview (`develop` branch):
 
 ```powershell
-irm da.gd/warphd | iex
+irm da.gd/warph_dev | iex
 ```
 
 ### Option 2: Release ZIP (One-Click)
