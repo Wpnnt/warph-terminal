@@ -4,7 +4,9 @@ function ex { explorer.exe $args }
 function ag {
     if (_has antigravity-ide) { antigravity-ide @args }
     elseif (_has code) { code @args }
-    else { Write-Host "Neither antigravity-ide nor code found in PATH" -ForegroundColor Yellow }
+    else {
+        Write-Host "  $($PSStyle.Foreground.BrightYellow)[!]$($PSStyle.Reset) $($PSStyle.Foreground.BrightBlack)Neither antigravity-ide nor code found in PATH$($PSStyle.Reset)"
+    }
 }
 
 function vlc {
@@ -16,7 +18,9 @@ function vlc {
     )
     $exe = $vlcPaths | Where-Object { Test-Path $_ } | Select-Object -First 1
     if ($exe) { & $exe @args }
-    else { Write-Host "VLC not found" -ForegroundColor Yellow }
+    else {
+        Write-Host "  $($PSStyle.Foreground.BrightYellow)[!]$($PSStyle.Reset) $($PSStyle.Foreground.BrightBlack)VLC not found$($PSStyle.Reset)"
+    }
 }
 
 function colorpick {
@@ -27,5 +31,7 @@ function colorpick {
     )
     $exe = $ptPaths | Where-Object { Test-Path $_ } | Select-Object -First 1
     if ($exe) { Start-Process $exe }
-    else { Write-Host "PowerToys ColorPicker not found" -ForegroundColor Yellow }
+    else {
+        Write-Host "  $($PSStyle.Foreground.BrightYellow)[!]$($PSStyle.Reset) $($PSStyle.Foreground.BrightBlack)PowerToys ColorPicker not found$($PSStyle.Reset)"
+    }
 }

@@ -10,7 +10,6 @@ Automated module discovery • Modern Rust CLI tools • Media utilities • Oh 
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.4%2B-blue.svg)](https://github.com/PowerShell/PowerShell)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6.svg)](https://microsoft.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
 </div>
 
 ---
@@ -49,6 +48,12 @@ Run this one-liner in PowerShell 7 to download and launch the installer directly
 
 ```powershell
 irm da.gd/warph | iex
+```
+
+For the latest development preview (`develop` branch):
+
+```powershell
+irm da.gd/warphd | iex
 ```
 
 ### Option 2: Release ZIP (One-Click)
@@ -273,7 +278,10 @@ Convert media files directly in your terminal:
 ```
 warph-terminal/
 ├── assets/
-│   └── logo.svg                      # Official Warph Terminal vector logo
+│   ├── logo.svg                      # Official Warph Terminal vector logo
+│   ├── logo.png                      # Windows Terminal profile raster icon
+│   ├── banner.ansi                   # Pre-rendered 3D TrueColor half-block terminal banner
+│   └── variants/                     # Curated collection of high-res theme logo variants
 ├── .github/
 │   └── workflows/
 │       └── audit.yml                 # CI workflow: syntax, functional tests, and 3-way sync
