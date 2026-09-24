@@ -7,7 +7,7 @@
 
 [CmdletBinding()]
 param(
-    [string]$Branch = 'develop',
+    [string]$Branch = 'main',
     [switch]$Install,
     [ValidateSet('1', '2', '3')]
     [string]$Mode = '3',
