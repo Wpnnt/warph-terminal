@@ -280,6 +280,10 @@ warph-terminal/
 │   ├── logo.png                      # Windows Terminal profile raster icon
 │   ├── banner.ansi                   # Pre-rendered 3D TrueColor half-block terminal banner
 │   └── variants/                     # Curated collection of high-res theme logo variants
+├── docs/
+│   ├── architecture.md               # Runtime lifecycle, execution pipeline, and design constraints
+│   ├── customization.md              # Adding modules, custom themes, and font configuration
+│   └── changelog.md                  # Semantic Versioning release history
 ├── .github/
 │   └── workflows/
 │       └── audit.yml                 # CI workflow: syntax, functional tests, and 3-way sync
@@ -322,6 +326,8 @@ warph-terminal/
 ---
 
 ## Customization
+
+For comprehensive technical specifications, see the [Architecture Overview](docs/architecture.md), [Customization Guide](docs/customization.md), and [Release Changelog](docs/changelog.md).
 
 ### Adding a New Module
 
