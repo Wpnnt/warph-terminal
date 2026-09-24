@@ -46,9 +46,6 @@ if (Test-Path $testFile) {
 # 3. Profile Auditor & 3-Way Sync Gate
 Write-Host "  [3/3] Running module sync & standards check..."
 $auditor = Join-Path $repoRoot "scripts\audit-profile.ps1"
-if (-not (Test-Path $auditor)) {
-    $auditor = Join-Path $repoRoot ".agents\skills\pwsh-profile-auditor\scripts\audit-profile.ps1"
-}
 if (Test-Path $auditor) {
     if ($Benchmark) {
         & pwsh -NoProfile -File $auditor -Benchmark

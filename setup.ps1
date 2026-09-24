@@ -1105,9 +1105,6 @@ function Invoke-UninstallAction ($isForce) {
 function Invoke-AuditAction {
     $testsRunner = Join-Path $repoRoot "tests\run-tests.ps1"
     $auditScript = Join-Path $repoRoot "scripts\audit-profile.ps1"
-    if (-not (Test-Path $auditScript)) {
-        $auditScript = Join-Path $repoRoot ".agents\skills\pwsh-profile-auditor\scripts\audit-profile.ps1"
-    }
     if (Test-Path $testsRunner) {
         & pwsh -NoProfile -File $testsRunner -Benchmark
     } elseif (Test-Path $auditScript) {

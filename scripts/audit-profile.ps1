@@ -139,22 +139,22 @@ if ($missingReadme.Count -gt 0) {
 # 4. Code portability & standards check
 Write-Host "  ${dim}[4/4]${rst} Checking code portability & charset standards..."
 
-$emojiPattern = '[\uD83C-\uD83E][\uDC00-\uDFFF]|[\u2600-\u2712\u2715-\u27BF]'
-$linesWithEmoji = @()
+$unsupportedCharsetPattern = '[\uD83C-\uD83E][\uDC00-\uDFFF]|[\u2600-\u2712\u2715-\u27BF]'
+$unsupportedCharsetMatches = @()
 
 foreach ($file in $filesToCheck) {
     $lineNum = 1
     foreach ($line in (Get-Content -Path $file)) {
-        if ($line -match $emojiPattern) {
-            $linesWithEmoji += "[$(Split-Path $file -Leaf):$lineNum] $line"
+        if ($line -match $unsupportedCharsetPattern) {
+            $unsupportedCharsetMatches += "[$(Split-Path $file -Leaf):$lineNum] $line"
         }
         $lineNum++
     }
 }
 
-if ($linesWithEmoji.Count -gt 0) {
+if ($unsupportedCharsetMatches.Count -gt 0) {
     Write-Host "    ${ylw}[WARN] Non-standard unicode glyphs found in files:${rst}"
-    foreach ($e in $linesWithEmoji) {
+    foreach ($e in $unsupportedCharsetMatches) {
         Write-Host "      $e"
     }
 } else {

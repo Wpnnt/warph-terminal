@@ -106,17 +106,17 @@ ${dim}${sep}${reset}
   ${command}togif <f> [fps] [w]${reset} ${accent}->${reset} ${desc}Convert to GIF (default 15fps, 480px)${reset}
   ${command}towebm <file>${reset}      ${accent}->${reset} ${desc}Convert to WebM (VP9 + Opus)${reset}
 
-${section}${icCli}  Modern CLI Tools${reset}
+${section}${icCli}  CLI Tools${reset}
 ${dim}${sep}${reset}
-  ${command}eza [args]${reset}         ${accent}->${reset} ${desc}modern ls: list files with icons, colors & git status${reset}
-  ${command}fd <pattern>${reset}       ${accent}->${reset} ${desc}fast, user-friendly alternative to find${reset}
+  ${command}eza [args]${reset}         ${accent}->${reset} ${desc}ls replacement: list files with icons, colors & git status${reset}
+  ${command}fd <pattern>${reset}       ${accent}->${reset} ${desc}fast recursive file finder${reset}
   ${command}bat <file>${reset}         ${accent}->${reset} ${desc}syntax-highlighted file viewer with line numbers${reset}
-  ${command}rg <pattern>${reset}       ${accent}->${reset} ${desc}ripgrep: ultra-fast text search${reset}
+  ${command}rg <pattern>${reset}       ${accent}->${reset} ${desc}ripgrep: fast recursive text search${reset}
   ${command}dust${reset}               ${accent}->${reset} ${desc}interactive visual disk usage analyzer${reset}
-  ${command}btm${reset}                ${accent}->${reset} ${desc}bottom: modern CPU, memory & process monitor${reset}
-  ${command}procs${reset}              ${accent}->${reset} ${desc}modern process tree and status viewer${reset}
+  ${command}btm${reset}                ${accent}->${reset} ${desc}bottom: CPU, memory, and process monitor${reset}
+  ${command}procs${reset}              ${accent}->${reset} ${desc}process tree and resource viewer${reset}
   ${command}yazi${reset}               ${accent}->${reset} ${desc}terminal file manager${reset}
-  ${command}gitui${reset}              ${accent}->${reset} ${desc}interactive terminal git user interface${reset}
+  ${command}gitui${reset}              ${accent}->${reset} ${desc}terminal git interface${reset}
   ${command}tokei [path]${reset}       ${accent}->${reset} ${desc}count lines of code by language${reset}
   ${command}hyperfine <cmd>${reset}    ${accent}->${reset} ${desc}benchmark execution speed of commands${reset}
   ${command}xh <url>${reset}           ${accent}->${reset} ${desc}friendly HTTP client for APIs${reset}
