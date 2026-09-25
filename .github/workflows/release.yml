@@ -137,6 +137,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.resolve_tag.outputs.tag_name }}
-          name: Warph Terminal ${{ steps.resolve_tag.outputs.tag_name }}
+          name: ${{ steps.resolve_tag.outputs.tag_name }}
           files: warph-terminal*.zip
           generate_release_notes: true
