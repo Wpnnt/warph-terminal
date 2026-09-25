@@ -78,12 +78,8 @@ if ($Variant) {
         $Height = if ($Variant -ge 7) { 36 } else { 30 }
     }
 } elseif (-not $Path) {
-    $primaryChoice = if ($NoBackground) { "assets\logo-nobg.png" } else { "assets\logo.png" }
     $candidates = @(
-        (Join-Path $repoRoot $primaryChoice),
-        (Join-Path $repoRoot "assets\logo-nobg.png"),
         (Join-Path $repoRoot "assets\logo.png"),
-        (Join-Path $repoRoot "assets\logo-transparent.png"),
         (Join-Path $repoRoot "assets\logo.svg")
     )
     foreach ($cand in $candidates) {
@@ -91,11 +87,6 @@ if ($Variant) {
             $Path = $cand
             break
         }
-    }
-} elseif ($NoBackground -and (Split-Path $Path -Leaf) -eq "logo.png") {
-    $noBgAlt = Join-Path (Split-Path $Path -Parent) "logo-nobg.png"
-    if (Test-Path -LiteralPath $noBgAlt) {
-        $Path = $noBgAlt
     }
 }
 
