@@ -4,7 +4,7 @@ All notable changes to Warph Terminal are documented in this file following [Kee
 
 ---
 
-## [v1.4.0] — Unreleased (develop)
+## [v1.4.0] — 2026-09-24
 
 ### Added
 - **Automated Test Suite Runner**: Unified test runner (`tests/run-tests.ps1`) combining AST syntax verification across all scripts with functional assertions and latency benchmarking.
