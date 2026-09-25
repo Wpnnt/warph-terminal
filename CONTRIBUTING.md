@@ -8,7 +8,7 @@ Contributions are welcome! Whether you are adding a new shortcut, fixing a bug, 
 
 ### 1. Create a Branch
 
-Fork the repository and create a new branch from `main`:
+Fork the repository and branch off `develop`:
 
 ```powershell
 git checkout -b feature/my-new-shortcut
@@ -39,7 +39,7 @@ Before opening a pull request, run the test suite to verify syntax and synchroni
 pwsh -NoProfile -File tests/run-tests.ps1
 ```
 
-All project scripts must pass AST parsing and the 3-Way Sync check. Additionally, automated Git pre-commit hooks via Husky are configured in `.husky/` to enforce clean syntax, zero unrendered emojis, and portable paths on every `git commit`.
+All project scripts must pass AST parsing and module synchronization checks. Additionally, Git pre-commit hooks via Husky run automated quality checks to enforce clean syntax, cross-terminal charset compatibility, and portable paths on every `git commit`.
 
 ### 5. Commit & Open a Pull Request
 
@@ -50,14 +50,14 @@ git commit -m "feat(network): add curlssl helper"
 git push origin feature/my-new-shortcut
 ```
 
-Then open a Pull Request against the `main` branch. GitHub Actions will automatically run the test suite on your PR.
+Then open a Pull Request against the `develop` branch. GitHub Actions will automatically run the test suite on your PR.
 
 ---
 
 ## Coding Guidelines
 
-- **Short, mnemonic names**: Prefer 2 to 4 characters for frequent commands (e.g. `cb`, `myip`, `mkcd`, `killport`).
-- **External tool guards**: If wrapping an external binary (`eza`, `bat`, `fd`, `yt-dlp`), always use the `_has` helper with a native PowerShell fallback:
+- Keep command names short and easy to remember (2 to 4 characters where practical, such as `cb`, `myip`, `mkcd`, `killport`).
+- Guard external binaries (`eza`, `bat`, `fd`, `yt-dlp`) with the `_has` helper and provide a native PowerShell fallback:
   ```powershell
   function cat {
       param([Parameter(ValueFromRemainingArguments = $true)]$Args)
@@ -65,21 +65,21 @@ Then open a Pull Request against the `main` branch. GitHub Actions will automati
       else { Get-Content @Args }
   }
   ```
-- **Zero hardcoded paths**: Never hardcode user paths or drive letters. Use:
+- Avoid hardcoding system paths or drive letters. Use dynamic lookups instead:
   - `[Environment]::GetFolderPath('UserProfile')` (user home)
-  - `[Environment]::GetFolderPath('MyVideos')` (videos)
+  - `[Environment]::GetFolderPath('MyVideos')` (videos directory)
   - `$PSScriptRoot` (relative script directory)
-- **Terminal output**: Keep all `Write-Host` messages in English. Use `$PSStyle.Foreground.*` for coloring. Avoid raw emojis.
-- **Clipboard feedback**: When a command copies text to the clipboard, show:
+- Keep `Write-Host` messages in English and use `$PSStyle.Foreground.*` for coloring. Stick to standard ASCII or verified Nerd Font glyphs to prevent encoding artifacts across terminal hosts.
+- For commands that copy text to the clipboard, provide confirmation:
   ```powershell
   Write-Host "✓ Copied to clipboard" -ForegroundColor Green
   ```
 
 ---
 
-## Release Process
+## Releases
 
-Warph Terminal features automated release packaging and Semantic Versioning:
+Releases follow Semantic Versioning with automated packaging via script or GitHub Actions:
 
 ### Option A: Local Release Script (Interactive)
 

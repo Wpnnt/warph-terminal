@@ -18,7 +18,7 @@ if (Test-Path -LiteralPath $_cfgDir) {
     }
 }
 
-Write-Host "Use 'Show-Help' to list all available functions" -ForegroundColor Yellow
+Write-Host "  $($PSStyle.Foreground.BrightBlack)Use '$($PSStyle.Foreground.BrightCyan)Show-Help$($PSStyle.Foreground.BrightBlack)' to list all available functions$($PSStyle.Reset)"
 
 # 2. Modular Functions Auto-Discovery Loader (loads all domain *.ps1 in modules/)
 $_modDir = Join-Path $PSScriptRoot "modules"

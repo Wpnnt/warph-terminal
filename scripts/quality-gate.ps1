@@ -83,10 +83,10 @@ if ($psFiles) {
     Write-Host "  ${dim}[2/4]${rst} ${dim}No PowerShell files to parse.${rst}"
 }
 
-# 3. Check 2: Clean Typography (Standard ASCII / Nerd Font / ANSI Only)
-Write-Host "  ${dim}[3/4]${rst} Enforcing clean typography (Zero Emojis)..." -NoNewline
-$emojiPattern = '[\uD83C-\uD83E][\uDC00-\uDFFF]|[\u2600-\u2712\u2715-\u27BF]|[\u2300-\u23FF]|[\u2B50\u2B55]'
-$emojiViolations = @()
+# 3. Check 2: Terminal Charset Compatibility (Standard ASCII / Nerd Font / ANSI Only)
+Write-Host "  ${dim}[3/4]${rst} Checking terminal charset compatibility..." -NoNewline
+$unsupportedCharsetPattern = '[\uD83C-\uD83E][\uDC00-\uDFFF]|[\u2600-\u2712\u2715-\u27BF]|[\u2300-\u23FF]|[\u2B50\u2B55]'
+$charsetViolations = @()
 
 foreach ($f in $filesToCheck) {
     if ($f -match '\.(svg|png|ico|jpg|webp)$') { continue }
@@ -95,32 +95,32 @@ foreach ($f in $filesToCheck) {
     if (-not $lines) { continue }
     $lineNum = 1
     foreach ($line in $lines) {
-        if ($line -match $emojiPattern) {
+        if ($line -match $unsupportedCharsetPattern) {
             $rel = $f.Replace($repoRoot, '').TrimStart('\/')
-            $emojiViolations += "[${rel}:${lineNum}] $line"
+            $charsetViolations += "[${rel}:${lineNum}] $line"
         }
         $lineNum++
     }
 }
 
-if ($emojiViolations.Count -gt 0) {
+if ($charsetViolations.Count -gt 0) {
     Write-Host " ${red}[FAIL]${rst}"
-    Write-Host "    ${red}Found prohibited raw emojis (must use Nerd Font glyphs or clean ASCII):${rst}"
-    foreach ($v in ($emojiViolations | Select-Object -First 10)) {
+    Write-Host "    ${red}Found unsupported unicode glyphs (clean ASCII or Nerd Font required):${rst}"
+    foreach ($v in ($charsetViolations | Select-Object -First 10)) {
         Write-Host "      $dim$v$rst"
     }
-    if ($emojiViolations.Count -gt 10) {
-        Write-Host "      $dim... and $($emojiViolations.Count - 10) more violations.$rst"
+    if ($charsetViolations.Count -gt 10) {
+        Write-Host "      $dim... and $($charsetViolations.Count - 10) more violations.$rst"
     }
     $failed = $true
 } else {
-    Write-Host " ${grn}[OK] Zero emojis${rst}"
+    Write-Host " ${grn}[OK] Clean charset${rst}"
 }
 
-# 4. Check 3: Portability & Clean Code (No Hardcoded Personal Paths or Conversational Comments)
-Write-Host "  ${dim}[4/4]${rst} Enforcing portability and clean comments..." -NoNewline
+# 4. Check 3: Portability & Code Standards (No Hardcoded Personal Paths or Formulaic Boilerplate)
+Write-Host "  ${dim}[4/4]${rst} Verifying portability and code comments..." -NoNewline
 $pathPattern = '([a-zA-Z]:\\Users\\[a-zA-Z0-9_-]+|[a-zA-Z]:\\vault_dev|/home/[a-zA-Z0-9_-]+)'
-$boilerplatePattern = '(?i)(here is the updated|i hope this helps|this function is responsible for|sure, here is|in this step, we|let me know if you have any questions)'
+$boilerplatePattern = '(?i)(here is the updated|i hope this helps|this function is responsible for|sure, here is|in this step, we|let me know if you have any questions|delve into|seamless integration|pivotal role|groundbreaking|nestled in|rich tapestry)'
 $contentViolations = @()
 
 foreach ($f in $filesToCheck) {
@@ -133,12 +133,12 @@ foreach ($f in $filesToCheck) {
 
     # Path check
     if ($content -match $pathPattern) {
-        $contentViolations += "[$rel] Hardcoded user path: $($Matches[1])"
+        $contentViolations += "[$rel] Absolute path: $($Matches[1])"
     }
 
-    # Conversational comment check
+    # Boilerplate / formulaic phrasing check
     if ($content -match $boilerplatePattern) {
-        $contentViolations += "[$rel] Conversational comment boilerplate: '$($Matches[1])'"
+        $contentViolations += "[$rel] Formulaic / boilerplate phrasing: '$($Matches[1])'"
     }
 }
 
@@ -149,7 +149,7 @@ if ($contentViolations.Count -gt 0) {
     }
     $failed = $true
 } else {
-    Write-Host " ${grn}[OK] Clean code${rst}"
+    Write-Host " ${grn}[OK] Passed${rst}"
 }
 
 # 5. Check 4: 3-Way Synchronization Gate (if any module changed)
@@ -170,12 +170,12 @@ Write-Host ""
 Write-Host "${dim}----------------------------------------------------${rst}"
 
 if ($failed) {
-    Write-Host "${red}${bld}[COMMIT REJECTED] Code quality verification failed!${rst}"
+    Write-Host "${red}${bld}[REJECTED] Code quality verification failed.${rst}"
     Write-Host "Please address the issues listed above before committing."
     Write-Host ""
     exit 1
 } else {
-    Write-Host "${grn}${bld}[COMMIT APPROVED] Code quality verification passed successfully.${rst}"
+    Write-Host "${grn}${bld}[APPROVED] Code quality verification passed.${rst}"
     Write-Host ""
     exit 0
 }

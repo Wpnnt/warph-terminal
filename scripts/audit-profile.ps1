@@ -136,29 +136,29 @@ if ($missingReadme.Count -gt 0) {
     Write-Host "    ${grn}[OK] All user functions present in README.md${rst}"
 }
 
-# 4. Conventions check
-Write-Host "  ${dim}[4/4]${rst} Checking repository conventions (AGENTS.md)..."
+# 4. Code portability & standards check
+Write-Host "  ${dim}[4/4]${rst} Checking code portability & charset standards..."
 
-$emojiPattern = '[\uD83C-\uD83E][\uDC00-\uDFFF]|[\u2600-\u2712\u2715-\u27BF]'
-$linesWithEmoji = @()
+$unsupportedCharsetPattern = '[\uD83C-\uD83E][\uDC00-\uDFFF]|[\u2600-\u2712\u2715-\u27BF]'
+$unsupportedCharsetMatches = @()
 
 foreach ($file in $filesToCheck) {
     $lineNum = 1
     foreach ($line in (Get-Content -Path $file)) {
-        if ($line -match $emojiPattern) {
-            $linesWithEmoji += "[$(Split-Path $file -Leaf):$lineNum] $line"
+        if ($line -match $unsupportedCharsetPattern) {
+            $unsupportedCharsetMatches += "[$(Split-Path $file -Leaf):$lineNum] $line"
         }
         $lineNum++
     }
 }
 
-if ($linesWithEmoji.Count -gt 0) {
-    Write-Host "    ${ylw}[WARN] Prohibited emojis found in files:${rst}"
-    foreach ($e in $linesWithEmoji) {
+if ($unsupportedCharsetMatches.Count -gt 0) {
+    Write-Host "    ${ylw}[WARN] Non-standard unicode glyphs found in files:${rst}"
+    foreach ($e in $unsupportedCharsetMatches) {
         Write-Host "      $e"
     }
 } else {
-    Write-Host "    ${grn}[OK] Zero emojis (clean Nerd Font/ANSI)${rst}"
+    Write-Host "    ${grn}[OK] Clean terminal charset (ANSI & Nerd Font compatible)${rst}"
 }
 
 # Hardcoded paths check
@@ -174,10 +174,10 @@ foreach ($file in $filesToCheck) {
 }
 
 if ($hardcodedMatches.Count -gt 0) {
-    Write-Host "    ${red}[FAIL] Hardcoded user paths found:${rst} $($hardcodedMatches -join '; ')"
+    Write-Host "    ${red}[FAIL] Absolute local machine paths found:${rst} $($hardcodedMatches -join '; ')"
     $hasErrors = $true
 } else {
-    Write-Host "    ${grn}[OK] No hardcoded user paths${rst}"
+    Write-Host "    ${grn}[OK] Portable paths (dynamic resolution)${rst}"
 }
 
 # 5. Benchmark (Optional)

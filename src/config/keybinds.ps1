@@ -3,16 +3,16 @@
 if (Get-Command Set-PSReadLineOption -ErrorAction SilentlyContinue) {
     try {
         Set-PSReadLineOption -PredictionViewStyle ListView -Colors @{
-            Command   = '#87CEEB'
-            Parameter = '#98FB98'
-            Operator  = '#FFB6C1'
-            Variable  = '#DDA0DD'
-            String    = '#FFDAB9'
-            Number    = '#B0E0E6'
-            Type      = '#F0E68C'
-            Comment   = '#D3D3D3'
-            Keyword   = '#8367c7'
-            Error     = '#FF6347'
+            Command   = '#6BD0DB'
+            Parameter = '#A0CCA0'
+            Operator  = '#EBE9EA'
+            Variable  = '#7CB7FF'
+            String    = '#E5C07B'
+            Number    = '#D5D4D5'
+            Type      = '#56B6C2'
+            Comment   = '#606162'
+            Keyword   = '#6BD0DB'
+            Error     = '#E06C75'
         } -ErrorAction Stop
 
         Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward

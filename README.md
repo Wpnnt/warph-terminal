@@ -4,27 +4,24 @@
 
 # Warph Terminal
 
-**A modular, high-performance PowerShell 7 environment for Windows**  
-Automated module discovery • Modern Rust CLI tools • Media utilities • Oh My Posh prompt
+**A modular PowerShell 7 environment for Windows with fast startup, native CLI wrappers, and clean themes.**
 
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.4%2B-blue.svg)](https://github.com/PowerShell/PowerShell)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6.svg)](https://microsoft.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
 </div>
 
 ---
 
 ## Overview
 
-Warph Terminal replaces monolithic PowerShell profiles with a lightweight, decoupled architecture:
+Warph Terminal organizes your PowerShell profile into small, auto-loaded modules instead of one giant script:
 
-- **Modular Discovery**: Modules placed in `src/modules/*.ps1` are auto-loaded at startup without editing manifests.
-- **Fast Startup**: Optimized startup path running under 90ms.
-- **Zero Hardcoded Paths**: All user, system, and media locations resolve dynamically via .NET APIs.
-- **Portable Setup**: Installs to `~/.warph-terminal` and works across machines.
-- **Modern CLI Integration**: Native wrappers and fallbacks for modern Rust tools (`eza`, `bat`, `fd`, `bottom`, `ripgrep`, etc.).
-- **Interactive Media Toolkit**: yt-dlp terminal UI (`yti`) and single-command FFmpeg format converters.
+- Drop any `.ps1` into `src/modules/` and it loads automatically on shell startup.
+- Startup latency stays under 90ms by avoiding bloated loader routines.
+- Paths resolve dynamically via .NET APIs, keeping your setup portable across machines.
+- Wrappers and native fallbacks for popular CLI tools (`eza`, `bat`, `fd`, `bottom`, `ripgrep`).
+- Media shortcuts for `yt-dlp` and one-line FFmpeg audio/video conversions.
 
 ---
 
@@ -33,11 +30,11 @@ Warph Terminal replaces monolithic PowerShell profiles with a lightweight, decou
 Before installing, ensure you have:
 
 1. **[PowerShell 7.4+](https://github.com/PowerShell/PowerShell/releases)** (`pwsh.exe`)
-2. **[Windows Terminal](https://apps.microsoft.com/detail/9n0dx20hk701)** (**Required host** — the legacy `conhost.exe` console cannot render Nerd Font glyphs, true-color ANSI, or SVG profile icons)
-3. **A Nerd Font** *(Optional)* — e.g., [CaskaydiaCove Nerd Font](https://www.nerdfonts.com/font-downloads) or [JetBrainsMono NF] to render extra prompt icons and glyphs. If skipped or not installed, Warph Terminal cleanly defaults to standard built-in system fonts (**Cascadia Mono** / **Consolas**) without errors.
+2. **[Windows Terminal](https://apps.microsoft.com/detail/9n0dx20hk701)** (Required to render 24-bit ANSI colors and font glyphs)
+3. **A Nerd Font** *(Optional)* — e.g. [CaskaydiaCove NF](https://www.nerdfonts.com/font-downloads) or JetBrainsMono NF for prompt glyphs. Without it, standard system fonts (`Cascadia Mono` / `Consolas`) work without errors.
 
 > [!TIP]
-> **Automatic Prerequisite Setup**: You don't need to install everything manually. Running `.\setup.ps1` (or `install.cmd`) automatically checks your environment and offers to install Windows Terminal and PowerShell 7 via `winget`. Font installation is optional and can be customized at any time with `.\setup.ps1 -SetFont`.
+> Running `.\setup.ps1` checks for missing tools and offers to install Windows Terminal or PowerShell 7 automatically via `winget`. Font configuration can be launched anytime with `.\setup.ps1 -SetFont`.
 
 ---
 
@@ -49,6 +46,12 @@ Run this one-liner in PowerShell 7 to download and launch the installer directly
 
 ```powershell
 irm da.gd/warph | iex
+```
+
+For the latest development preview (`develop` branch):
+
+```powershell
+irm da.gd/warph_dev | iex
 ```
 
 ### Option 2: Release ZIP (One-Click)
@@ -137,9 +140,9 @@ Run `.\scripts\install-rust-tools.ps1` to install modern CLI alternatives via `w
 | `trash <path>` | Move a file or folder to the Windows Recycle Bin |
 | `cleantemp` | Remove temporary files in `%TEMP%` and report reclaimed space |
 
-### Modern CLI Tools
+### CLI Utilities
 
-Modern command-line utilities installed via `scripts/install-rust-tools.ps1` using their native, standard commands:
+Commands and wrappers for tools installed via `scripts/install-rust-tools.ps1`:
 
 | Command | Tool | Description |
 |---|---|---|
@@ -273,7 +276,14 @@ Convert media files directly in your terminal:
 ```
 warph-terminal/
 ├── assets/
-│   └── logo.svg                      # Official Warph Terminal vector logo
+│   ├── logo.svg                      # Official Warph Terminal vector logo
+│   ├── logo.png                      # Windows Terminal profile raster icon
+│   ├── banner.ansi                   # Pre-rendered 3D TrueColor half-block terminal banner
+│   └── variants/                     # Curated collection of high-res theme logo variants
+├── docs/
+│   ├── architecture.md               # Runtime lifecycle, execution pipeline, and design constraints
+│   ├── customization.md              # Adding modules, custom themes, and font configuration
+│   └── changelog.md                  # Semantic Versioning release history
 ├── .github/
 │   └── workflows/
 │       └── audit.yml                 # CI workflow: syntax, functional tests, and 3-way sync
@@ -317,6 +327,8 @@ warph-terminal/
 
 ## Customization
 
+For comprehensive technical specifications, see the [Architecture Overview](docs/architecture.md), [Customization Guide](docs/customization.md), and [Release Changelog](docs/changelog.md).
+
 ### Adding a New Module
 
 Warph Terminal automatically detects and sources any `.ps1` file inside `src/modules/`:
@@ -347,20 +359,15 @@ For personal aliases, API tokens, or custom environments you do not want to trac
 
 ---
 
-## Testing & Quality Assurance
+## Testing
 
-Run the automated test suite locally before submitting changes:
+Run tests and benchmark startup time locally:
 
 ```powershell
 pwsh -NoProfile -File tests/run-tests.ps1 -Benchmark
 ```
 
-The test runner validates:
-- **AST Syntax**: Verifies all PowerShell scripts parse with 0 syntax errors.
-- **Functional Assertions**: Confirms core profile functions register properly.
-- **3-Way Synchronization**: Ensures all functions are documented in `Show-Help` and `README.md`.
-- **Conventions**: Rejects hardcoded user directories and unrendered glyphs.
-- **Startup Latency**: Measures profile load time in milliseconds.
+The test runner checks syntax across all `.ps1` scripts, runs profile functional tests, verifies that every shortcut is documented in `Show-Help` and `README.md`, flags absolute machine paths, and benchmarks load time.
 
 ---
 
