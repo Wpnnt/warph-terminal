@@ -121,9 +121,20 @@ jobs:
         run: |
           $tag = "${{ steps.resolve_tag.outputs.tag_name }}"
           $dist = "warph-terminal"
-          New-Item -ItemType Directory -Path $dist -Force | Out-Null
-          Copy-Item -Path src, scripts, themes, tests, assets -Destination $dist -Recurse
-          Copy-Item -Path setup.ps1, install.cmd, README.md, CONTRIBUTING.md, LICENSE, .gitignore, package.json -Destination $dist
+          # Copy essential user runtime directories
+          Copy-Item -Path src -Destination $dist -Recurse
+          Copy-Item -Path themes -Destination $dist -Recurse
+
+          # Assets: only user-facing banner and official logos
+          New-Item -ItemType Directory -Path (Join-Path $dist "assets") -Force | Out-Null
+          Copy-Item -Path assets\banner.ansi, assets\logo.svg, assets\logo.png -Destination (Join-Path $dist "assets") -Force
+
+          # Scripts: only runtime installation and repair helpers
+          New-Item -ItemType Directory -Path (Join-Path $dist "scripts") -Force | Out-Null
+          Copy-Item -Path scripts\setup.ps1, scripts\install.ps1, scripts\uninstall.ps1, scripts\web-install.ps1, scripts\install-rust-tools.ps1 -Destination (Join-Path $dist "scripts") -Force
+
+          # Root entrypoints and essential documentation
+          Copy-Item -Path setup.ps1, install.cmd, README.md, LICENSE -Destination $dist -Force
 
           # Versioned zip and canonical latest zip
           $versionedZip = "warph-terminal-$tag.zip"
